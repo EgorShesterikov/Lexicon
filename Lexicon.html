@@ -103,16 +103,17 @@
   .fc-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
   .flashcard.flipped .fc-inner{transform:rotateY(180deg)}
   .fc-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:6px;display:flex;
-    flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:22px;text-align:center;
+    flex-direction:column;align-items:center;justify-content:center;padding:50px 18px 16px;text-align:center;
     border:1px solid var(--line);box-shadow:0 8px 22px var(--shadow);
     background-color:#fffdf6;
     background-image:linear-gradient(rgba(47,93,124,.14) 1px,transparent 1px);background-size:100% 30px;
     background-position:0 60px}
   .fc-face::before{content:"";position:absolute;top:44px;left:0;right:0;height:2px;background:rgba(163,53,47,.55)}
   .fc-back{transform:rotateY(180deg)}
-  .fc-word{font-size:32px;font-weight:700;font-family:var(--serif);color:var(--txt);overflow-wrap:anywhere}
-  .fc-sub{color:var(--accent2);font-size:17px;font-style:italic}
-  .fc-hint{color:var(--muted);font-size:12px;position:absolute;bottom:12px;font-style:italic}
+  .fc-flow{flex:1 1 auto;min-height:0;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden}
+  .fc-word{font-size:32px;font-weight:700;font-family:var(--serif);color:var(--txt);overflow-wrap:anywhere;line-height:1.12;max-width:100%}
+  .fc-sub{color:var(--accent2);font-size:17px;font-style:italic;overflow-wrap:anywhere;max-width:100%}
+  .fc-hint{color:var(--muted);font-size:12px;font-style:italic;flex:0 0 auto;margin-top:4px}
   .fc-controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:100%;max-width:440px}
   .fc-controls .btn{flex:1}
   .modeswitch{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:2px 0}
@@ -291,6 +292,10 @@
       <div class="toolbar">
         <input id="search" data-i18n-ph="ph_search" data-i18n-aria="searchAria">
         <select id="posFilter" data-i18n-aria="posFilterAria"><option value=""></option></select>
+        <select id="dictSort" data-i18n-aria="sortAria">
+          <option value="pos" data-i18n="sort_pos">By part of speech</option>
+          <option value="recent" data-i18n="sort_recent">Newest first</option>
+        </select>
       </div>
       <div id="dictList"></div>
     </div>
@@ -367,16 +372,20 @@
         <div class="flashcard" id="flashcard" role="button" tabindex="0" data-i18n-aria="flashcardAria">
           <div class="fc-inner">
             <div class="fc-face fc-front" aria-hidden="false">
-              <div class="fc-word" id="fcFrontWord"></div>
-              <div class="fc-sub" id="fcFrontSub"></div>
-              <div class="fc-pos" id="fcFrontPos"></div>
+              <div class="fc-flow">
+                <div class="fc-word" id="fcFrontWord"></div>
+                <div class="fc-sub" id="fcFrontSub"></div>
+                <div class="fc-pos" id="fcFrontPos"></div>
+              </div>
               <div class="fc-hint" id="fcHintFront" data-i18n="fc_hintFront">tap to flip</div>
             </div>
             <div class="fc-face fc-back" aria-hidden="true">
               <div class="fc-badge" id="fcBadge" style="display:none"></div>
-              <div class="fc-word" id="fcBackWord"></div>
-              <div class="fc-sub" id="fcBackSub"></div>
-              <div class="fc-pos" id="fcBackPos"></div>
+              <div class="fc-flow">
+                <div class="fc-word" id="fcBackWord"></div>
+                <div class="fc-sub" id="fcBackSub"></div>
+                <div class="fc-pos" id="fcBackPos"></div>
+              </div>
               <div class="fc-hint" id="fcHintBack" data-i18n="fc_hintBack">tap to flip back</div>
             </div>
           </div>
@@ -439,6 +448,7 @@ const STR={
     btn_bulkAdd:'Add all',
     ph_search:'🔍 Search by word or translation', searchAria:'Search by word or translation',
     opt_allPos:'All parts of speech', posFilterAria:'Filter by part of speech',
+    sort_pos:'By part of speech', sort_alpha:'A → Z', sort_recent:'Newest first', sortAria:'Sort',
     empty_dict:'Nothing yet. Add words on the “Add” tab.', empty_search:'Nothing found.',
     h_groups:'My review groups', ph_newGroup:'Group name, e.g. “Lesson 5”', newGroupAria:'New group name', btn_create:'Create',
     empty_groups:'No groups yet. Create a group to review words.',
@@ -461,6 +471,7 @@ const STR={
     h_editWord:'Edit word', btn_fetchVariants:'🔎 Fetch variants', btn_cancel:'Cancel', btn_save:'Save',
     btn_apply:'Apply', btn_toList:'← To list', review_hint:'Fix the translation and part of speech right in the row, or ✏️ for detailed editing with transcription and variant selection. Uncheck to skip a word.',
     btn_addChecked:'Add checked', ph_translation:'translation',
+    br_makeGroup:'Group these words into a new group:', addedGroupToast:(n,name)=>`Added: ${n} · group “${name}” created`,
     variants_label:'Meaning variants by part of speech — click to fill in the translation and part of speech',
     addToGroups_hint:'Check the groups this word should belong to.', btn_done:'Done',
     h_renameGroup:'Rename group', lbl_groupName:'Group name',
@@ -539,6 +550,7 @@ const STR={
     btn_bulkAdd:'Добавить все',
     ph_search:'🔍 Поиск по слову или переводу', searchAria:'Поиск по слову или переводу',
     opt_allPos:'Все части речи', posFilterAria:'Фильтр по части речи',
+    sort_pos:'По частям речи', sort_alpha:'А → Я', sort_recent:'Сначала новые', sortAria:'Сортировка',
     empty_dict:'Пока пусто. Добавьте слова на вкладке «Добавить».', empty_search:'Ничего не найдено.',
     h_groups:'Мои группы для повторения', ph_newGroup:'Название группы, напр. «Урок 5»', newGroupAria:'Название новой группы', btn_create:'Создать',
     empty_groups:'Групп пока нет. Создайте группу для повторения слов.',
@@ -561,6 +573,7 @@ const STR={
     h_editWord:'Редактировать слово', btn_fetchVariants:'🔎 Подтянуть варианты', btn_cancel:'Отмена', btn_save:'Сохранить',
     btn_apply:'Применить', btn_toList:'← К списку', review_hint:'Поправьте перевод и часть речи прямо в строке, либо ✏️ — подробное редактирование с транскрипцией и подбором вариантов. Снимите галочку, чтобы не добавлять слово.',
     btn_addChecked:'Добавить отмеченные', ph_translation:'перевод',
+    br_makeGroup:'Собрать эти слова в новую группу:', addedGroupToast:(n,name)=>`Добавлено: ${n} · создана группа «${name}»`,
     variants_label:'Варианты значений по частям речи — нажмите, чтобы подставить перевод и часть речи',
     addToGroups_hint:'Отметьте группы, в которых должно быть это слово.', btn_done:'Готово',
     h_renameGroup:'Переименовать группу', lbl_groupName:'Название группы',
@@ -706,11 +719,19 @@ function toast(msg,err){
 let voices=[];
 function loadVoices(){try{voices=window.speechSynthesis?speechSynthesis.getVoices():[];}catch(e){voices=[];}}
 if(window.speechSynthesis){loadVoices();try{speechSynthesis.onvoiceschanged=loadVoices;}catch(e){}}
+let currentAudio=null,fcAutoplayTimer=null;
+function stopAudio(){
+  if(currentAudio){try{currentAudio.pause();currentAudio.removeAttribute('src');currentAudio.load();}catch(e){}currentAudio=null;}
+  try{if(window.speechSynthesis&&(speechSynthesis.speaking||speechSynthesis.pending))speechSynthesis.cancel();}catch(e){}
+}
+function cancelCardAudio(){if(fcAutoplayTimer){clearTimeout(fcAutoplayTimer);fcAutoplayTimer=null;}stopAudio();}
+function cardAutoplay(w){fcAutoplayTimer=setTimeout(()=>{fcAutoplayTimer=null;speak(w.en,w.audio);},250);}
 function speak(word,audioUrl){
   word=(word==null?'':String(word)).trim();
   if(!word)return;
+  stopAudio();
   if(audioUrl){
-    try{const a=new Audio(audioUrl);a.play().then(()=>{}).catch(()=>ttsSpeak(word));return;}catch(e){}
+    try{const a=new Audio(audioUrl);currentAudio=a;a.play().then(()=>{}).catch(()=>{if(currentAudio===a){currentAudio=null;ttsSpeak(word);}});return;}catch(e){}
   }
   ttsSpeak(word);
 }
@@ -1029,8 +1050,9 @@ document.getElementById('bulkAdd').onclick=async()=>{
     }
   }finally{st.textContent='';btn.disabled=false;}
   if(!items.length){toast(t('t_noWords'),true);return;}
-  openBulkReview(items);
+  bulkReviewScroll=0;openBulkReview(items);
 };
+let bulkReviewScroll=0;
 function openBulkReview(items){
   const rows=items.map((it,i)=>`
     <div class="review-row">
@@ -1043,26 +1065,35 @@ function openBulkReview(items){
     </div>`).join('');
   openModal(`<h2>${esc(t('reviewTitle',items.length))}</h2>
     <p class="muted" style="font-size:13px;margin-top:0">${esc(t('review_hint'))}</p>
-    <div class="modal-scroll">${rows}</div>
+    <div class="modal-scroll" id="brScroll">${rows}</div>
+    <div class="checkline" style="margin-top:12px"><input type="checkbox" id="brMakeGroup"><label for="brMakeGroup" style="margin:0">${t('br_makeGroup')}</label></div>
+    <input id="brGroupName" placeholder="${esc(t('ph_newGroup'))}" style="display:none;margin-top:6px" autocomplete="off">
     <div class="modal-actions">
       <button class="btn ghost" id="brCancel">${t('btn_cancel')}</button>
       <button class="btn" id="brSave">${t('btn_addChecked')}</button>
     </div>`);
+  const brMk=document.getElementById('brMakeGroup');
+  brMk.onchange=()=>{const inp=document.getElementById('brGroupName');inp.style.display=brMk.checked?'':'none';if(brMk.checked)inp.focus();};
   document.querySelectorAll('.rv-play').forEach(b=>b.onclick=()=>{const it=items[+b.dataset.i];speak(it.en,it.audio);});
-  document.querySelectorAll('.rv-edit').forEach(b=>b.onclick=()=>{syncReview(items);editReviewItem(items,+b.dataset.i);});
+  document.querySelectorAll('.rv-edit').forEach(b=>b.onclick=()=>{const sc=document.getElementById('brScroll');bulkReviewScroll=sc?sc.scrollTop:0;syncReview(items);editReviewItem(items,+b.dataset.i);});
   document.getElementById('brCancel').onclick=closeModal;
   document.getElementById('brSave').onclick=()=>{
     syncReview(items);
-    let added=0,merged=0;
-    items.forEach((it)=>{
+    let added=0,merged=0;const ids=[];
+    items.forEach((it,i)=>{
       if(it._include===false)return;
       if(!it.en||!it.en.trim())return;
-      const res=addOrMergeWord({en:it.en.trim(),ru:(it.ru||'').trim(),ipa:it.ipa||'',pos:it.pos||'other',audio:it.audio||''});
-      if(res){if(res.merged)merged++;else added++;}
+      const res=addOrMergeWord({en:it.en.trim(),ru:(it.ru||'').trim(),ipa:it.ipa||'',pos:it.pos||'other',audio:it.audio||'',created:Date.now()+i});
+      if(res){if(res.merged)merged++;else added++;ids.push(res.word.id);}
     });
+    const gname=document.getElementById('brMakeGroup').checked?document.getElementById('brGroupName').value.trim():'';
+    let madeGroup=false;
+    if(gname&&ids.length){state.groups.push({id:uid(),name:gname,wordIds:Array.from(new Set(ids)),timer:{}});madeGroup=true;}
     save();closeModal();document.getElementById('bulkText').value='';
-    toast(t('addedMerged',added,merged));
+    if(madeGroup){renderGroups();toast(t('addedGroupToast',added+merged,gname));}
+    else toast(t('addedMerged',added,merged));
   };
+  const brSc=document.getElementById('brScroll');if(brSc)brSc.scrollTop=bulkReviewScroll;
 }
 function syncReview(items){
   document.querySelectorAll('.rv-inc').forEach(cb=>{items[+cb.dataset.i]._include=cb.checked;});
@@ -1137,6 +1168,7 @@ function wordSearchMatch(w,q){
 function renderDict(){
   const q=document.getElementById('search').value.trim().toLowerCase();
   const pf=document.getElementById('posFilter').value;
+  const sort=document.getElementById('dictSort').value;
   const list=document.getElementById('dictList');list.innerHTML='';
   let words=state.words.filter(w=>{
     if(pf&&w.pos!==pf)return false;
@@ -1144,6 +1176,10 @@ function renderDict(){
     return true;
   });
   if(!words.length){list.innerHTML='<div class="empty">'+(state.words.length?esc(t('empty_search')):esc(t('empty_dict')))+'</div>';return;}
+  if(sort==='recent'){
+    words.slice().sort((a,b)=>(b.created||0)-(a.created||0)).forEach(w=>list.appendChild(wordRow(w)));
+    return;
+  }
   const groups={};
   words.forEach(w=>{(groups[w.pos]=groups[w.pos]||[]).push(w);});
   POS_KEYS.forEach(pos=>{
@@ -1154,6 +1190,7 @@ function renderDict(){
 }
 document.getElementById('search').oninput=renderDict;
 document.getElementById('posFilter').onchange=renderDict;
+document.getElementById('dictSort').onchange=renderDict;
 
 function editWord(w){
   openModal(`<h2>${t('h_editWord')}</h2>
@@ -1195,7 +1232,7 @@ function editWord(w){
     w.en=en;w.ru=document.getElementById('editRu').value.trim();
     w.ipa=document.getElementById('editIpa').value.trim();
     w.pos=document.getElementById('editPos').value||'other';w.audio=audio;
-    save();renderDict();closeModal();toast(t('t_changed'));
+    save();const y=window.scrollY;renderDict();closeModal();window.scrollTo(0,y);toast(t('t_changed'));
   };
 }
 
@@ -1267,7 +1304,7 @@ function doImport(text){
   let added=0,merged=0;
   for(let i=start;i<rows.length;i++){
     const r=rows[i];const en=(r[0]||'').trim();if(!en)continue;
-    const res=addOrMergeWord({en,ru:(r[1]||'').trim(),ipa:(r[2]||'').trim(),pos:labelToPos(r[3])||'other',audio:''});
+    const res=addOrMergeWord({en,ru:(r[1]||'').trim(),ipa:(r[2]||'').trim(),pos:labelToPos(r[3])||'other',audio:'',created:Date.now()+i});
     if(res){if(res.merged)merged++;else added++;}
   }
   save();renderDict();
@@ -1405,6 +1442,7 @@ function openGroupWordsDialog(g){
     <div class="toolbar" style="margin-bottom:10px">
       <input id="gwSearch" placeholder="${esc(t('ph_search'))}" aria-label="${esc(t('searchAria'))}" autocomplete="off">
       <select id="gwPos" aria-label="${esc(t('posFilterAria'))}"><option value="">${esc(t('opt_allPos'))}</option>${POS_KEYS.map(k=>`<option value="${k}">${esc(posLabel(k))}</option>`).join('')}</select>
+      <select id="gwSort" aria-label="${esc(t('sortAria'))}"><option value="alpha">${esc(t('sort_alpha'))}</option><option value="recent">${esc(t('sort_recent'))}</option></select>
     </div>
     <div class="split" style="margin-bottom:8px;gap:8px">
       <button class="btn ghost sm" id="gwAddShown">${t('grp_addShown')}</button>
@@ -1416,12 +1454,15 @@ function openGroupWordsDialog(g){
   const search=document.getElementById('gwSearch');
   const posSel=document.getElementById('gwPos');
   function shownWords(){
-    const q=search.value.trim().toLowerCase();const pf=posSel.value;
-    return state.words.filter(w=>{
+    const q=search.value.trim().toLowerCase();const pf=posSel.value;const sort=document.getElementById('gwSort').value;
+    const arr=state.words.filter(w=>{
       if(pf&&w.pos!==pf)return false;
       if(q&&!(w.en.toLowerCase().includes(q)||(w.ru||'').toLowerCase().includes(q)))return false;
       return true;
-    }).sort((a,b)=>a.en.localeCompare(b.en));
+    });
+    if(sort==='recent')arr.sort((a,b)=>(b.created||0)-(a.created||0));
+    else arr.sort((a,b)=>a.en.localeCompare(b.en));
+    return arr;
   }
   function updateCount(){document.getElementById('gwCount').textContent=t('grpWordsCount',g.wordIds.length,state.words.length);}
   function render(){
@@ -1439,7 +1480,7 @@ function openGroupWordsDialog(g){
       save();updateCount();
     });
   }
-  search.oninput=render;posSel.onchange=render;
+  search.oninput=render;posSel.onchange=render;document.getElementById('gwSort').onchange=render;
   document.getElementById('gwAddShown').onclick=()=>{shownWords().forEach(w=>{if(!g.wordIds.includes(w.id))g.wordIds.push(w.id);});save();updateCount();render();};
   document.getElementById('gwClearShown').onclick=()=>{const ids=new Set(shownWords().map(w=>w.id));g.wordIds=g.wordIds.filter(id=>!ids.has(id));save();updateCount();render();};
   document.getElementById('gwDone').onclick=()=>{closeModal();renderGroups();};
@@ -1485,6 +1526,7 @@ function renderCardSetup(){
   if(prev&&['all','hard','new','groups'].includes(prev))sel.value=prev;
   fillGroupSelect();
   stopTimer();
+  cancelCardAudio();
   selectMode(cardMode);
   document.getElementById('cardSetup').style.display='';
   document.getElementById('cardGame').style.display='none';
@@ -1553,6 +1595,18 @@ function configureControls(){
   }
   document.getElementById('fcQuit').textContent=(game.mode==='random')?t('btn_finish'):t('btn_quit');
 }
+function fitCardText(face){
+  if(!face)return;
+  const flow=face.querySelector('.fc-flow'),word=face.querySelector('.fc-word');
+  if(!flow||!word)return;
+  const max=(window.innerWidth<=640)?26:32,min=13;
+  let size=max;word.style.fontSize=max+'px';
+  let guard=0;
+  while(size>min&&guard<48&&(flow.scrollHeight>flow.clientHeight+1||flow.scrollWidth>flow.clientWidth+1)){
+    size-=(size>22?2:1);word.style.fontSize=size+'px';guard++;
+  }
+}
+function fitCards(){fitCardText(document.querySelector('#flashcard .fc-front'));fitCardText(document.querySelector('#flashcard .fc-back'));}
 function showCard(){
   const c=document.getElementById('flashcard');const inner=c.querySelector('.fc-inner');
   inner.style.transition='none';c.classList.remove('flipped');void inner.offsetWidth;requestAnimationFrame(()=>{inner.style.transition='';});
@@ -1575,7 +1629,9 @@ function showCard(){
   if(game.mode==='test'){const inp=document.getElementById('fcAnswer');inp.value='';inp.disabled=false;inp.setAttribute('placeholder',t(frontEn?'ph_answer_ru':'ph_answer_en'));}
   configureControls();
   updateFaceHidden();
-  if(game.autoplay&&game.mode!=='test')setTimeout(()=>speak(w.en,w.audio),250);
+  fitCards();
+  cancelCardAudio();
+  if(game.autoplay&&game.mode!=='test')cardAutoplay(w);
   focusForCard();
 }
 
@@ -1618,7 +1674,8 @@ function revealTest(ok,typed){
   document.getElementById('fcAnswer').disabled=true;
   const c=document.getElementById('flashcard');c.classList.add('flipped');updateFaceHidden();
   configureControls();
-  if(game.autoplay)setTimeout(()=>speak(w.en,w.audio),250);
+  cancelCardAudio();
+  if(game.autoplay)cardAutoplay(w);
   document.getElementById('fcNext').focus();
 }
 function advance(){
@@ -1748,7 +1805,9 @@ function showRandomCard(w){
   const badge=document.getElementById('fcBadge');badge.style.display='none';badge.className='fc-badge';badge.textContent='';
   configureControls();
   updateFaceHidden();
-  if(game.autoplay)setTimeout(()=>speak(w.en,w.audio),250);
+  fitCards();
+  cancelCardAudio();
+  if(game.autoplay)cardAutoplay(w);
   document.getElementById('flashcard').focus();
 }
 function randomAnswer(knew){
@@ -1771,6 +1830,7 @@ function timerLine(g){
 
 function finishGame(){
   stopTimer();
+  cancelCardAudio();
   let timerRes=null;
   if(game&&game.mode==='test'&&game.timer)timerRes=recordTimer();
   if(game)game._lastTimer=timerRes;
@@ -1975,6 +2035,7 @@ confirmEl.addEventListener('keydown',e=>{
   else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('confirmOverlay').style.display==='none'&&modalEl.style.display!=='none')closeModal();});
+let fitResizeT;window.addEventListener('resize',()=>{clearTimeout(fitResizeT);fitResizeT=setTimeout(()=>{if(game&&document.getElementById('cardGame').style.display!=='none')fitCards();},150);});
 </script>
 </body>
 </html>

@@ -28,14 +28,15 @@ You don't have to download anything — click the banner above or the **▶ Laun
 
 ## Features
 
-- **Dictionary.** Words are sorted automatically by part of speech. Each word has a translation, transcription (IPA) and pronunciation.
-- **Adding words.** One at a time (with auto-filled translation, transcription and audio) or in bulk — as a list, with a review-and-edit window before saving.
-- **Multiple meanings.** All translation variants are pulled in, grouped by part of speech; you pick the one you need.
-- **Groups.** Your own sets of words to review (for example, by lesson).
-- **“Cards” game — three modes.** *Repetition* (flip the card as much as you like, single “Next word”, no statistics), *Test* (type the answer; flipping the card counts as a mistake; optional per-group timer with unique time stats), and *Random* (fresh random English words from an online database with a “knew / didn’t know” rating, added to your dictionary automatically). English↔Russian, flip, audio, per-word accuracy and a list of mistakes at the end.
-- **Statistics.** Accuracy and repetition count per word; separate “hard words” and “not studied yet” modes.
-- **Two languages.** English or Russian interface, switchable from the header (⚙️ area); English by default, and your choice is remembered.
-- **Accessibility.** Full keyboard control, screen-reader support and a reduced-motion mode.
+- **Dictionary.** Words are grouped automatically by part of speech, and can also be sorted **newest first**. Each entry has its translation(s), transcription (IPA), pronunciation, part of speech and accuracy stats. Smart search: a single letter shows every word starting with that letter, two or more characters search by substring (in the word or the translation).
+- **Adding words.** One at a time (with auto-filled translation, transcription and audio) or in bulk — as a list, with a review-and-edit window before saving and an option to gather the added words into a new group in one step. All meaning variants are pulled in, grouped by part of speech. Adding a word that already exists **merges** the new translation into it instead of creating a duplicate.
+- **Groups.** Your own word sets (for example, by lesson). Lists are collapsed by default and expand on demand; a name search appears once you have many groups. A quick **“Add words”** dialog builds a group fast with checkboxes, live search and a part-of-speech filter.
+- **“Cards” game — three modes.** Cards show the part of speech, play audio, and auto-shrink long words or translations so nothing spills over.
+  - *Repetition* — flip the card as much as you like, one “Next word” button, no statistics.
+  - *Test* — type the answer (the translation or the English word, depending on the card side); flipping the card counts as a mistake, then it flips to show the result. An optional per-group timer records your **best time — only for an error-free run**.
+  - *Random* — fresh random English words from an online database rated “knew / didn’t know”; every word shown is added to your dictionary automatically.
+- **Statistics.** Accuracy and repetition count per word; separate “hard words” and “not studied yet” scopes; a unique best time saved per group.
+- **Interface.** Clean button tabs, an English or Russian interface (switchable in the header, and remembered), and in-app confirmation dialogs instead of the browser's. Full keyboard control, screen-reader support and a reduced-motion mode.
 - **Backup.** Export and import the dictionary as CSV, and reset all data — in the settings menu (⚙️).
 
 ## Run locally
@@ -55,9 +56,10 @@ The dictionary and groups are saved in the browser's `localStorage` (key `vocab_
 Plain HTML, CSS and JavaScript with no build step and no external libraries. The automatic look-up uses free, key-less services:
 
 - [Free Dictionary API](https://dictionaryapi.dev) — transcription, pronunciation, part of speech;
-- [MyMemory](https://mymemory.translated.net) and the public Google Translate endpoint — translation and meaning variants by part of speech.
+- [MyMemory](https://mymemory.translated.net) and the public Google Translate endpoint — translation and meaning variants by part of speech;
+- a public random-word API with a [Datamuse](https://www.datamuse.com/api/) fallback — words for the “Random” card mode.
 
 ## Limitations
 
-- The automatic look-up needs the internet; when the services are unavailable, the fields are filled in by hand.
+- The automatic look-up and the “Random” card mode need the internet; when the services are unavailable, the fields are filled in by hand.
 - When ready-made audio is missing, pronunciation is synthesized by the browser voice (Web Speech API).
