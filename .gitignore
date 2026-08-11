@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# Windows shortcuts (создаются локально под свой путь)
+*.lnk
+
+# Временные и резервные файлы
+*.tmp
+*.bak
+*.log
+
+# Экспорт словаря (личные данные)
+my_vocabulary.csv
+*.csv
