@@ -1,5 +1,9 @@
 # Lexicon
 
+## 1.0.2 - 12.08.2026
+
+Adding a batch of words is safer now: the review window no longer closes if you misclick the dimmed area behind it or press Escape. Instead it asks whether to discard the words you've prepared, so a stray click can't wipe out a long list you were about to add.
+
 ## 1.0.1 - 11.08.2026
 
 The "Cards" game is now three modes. Repetition lets you flip through cards freely with no pressure and no stats. Test asks you to type the answer — flipping the card counts as a mistake — and an optional per-group timer saves your best time only for a flawless run. Random pulls fresh words from an online database, rates them "knew / didn't know", and adds each one to your dictionary automatically. Every card shows the part of speech, plays audio, and auto-shrinks long words or translations so nothing ever spills over the edge.

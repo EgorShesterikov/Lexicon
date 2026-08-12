@@ -485,6 +485,7 @@ const STR={
     t_createGroupFirst:'First create a group on the “Groups” tab', t_done:'Done',
     c_reset1:'Delete ALL words and groups? This cannot be undone.', c_reset2:'Are you sure? Final warning — the data will be erased.',
     btn_ok:'OK', quit_msg:'You’ll return to the card setup.', reset_confirm:'Yes, delete everything', reset_t2:'Final warning',
+    c_closeAdd:'Discard the words you’re adding?', c_closeAdd_msg:'You have words prepared to add. If you close this window now, they will not be saved.', btn_closeAnyway:'Close without saving', btn_keepEditing:'Keep editing',
     btn_delete:'Delete', h_delWord:'Delete word', h_delGroup:'Delete group',
     t_alreadyEmpty:'Already empty', t_cleared:'Dictionary and groups cleared',
     t_noWordsGame:'No words for the game', t_groupNoWords:'The group has no words', c_quit:'Quit the game?',
@@ -587,6 +588,7 @@ const STR={
     t_createGroupFirst:'Сначала создайте группу на вкладке «Группы»', t_done:'Готово',
     c_reset1:'Удалить ВСЕ слова и группы? Это действие необратимо.', c_reset2:'Точно? Последнее предупреждение — данные будут стёрты.',
     btn_ok:'OK', quit_msg:'Вы вернётесь к настройкам карточек.', reset_confirm:'Да, удалить всё', reset_t2:'Последнее предупреждение',
+    c_closeAdd:'Отменить добавление слов?', c_closeAdd_msg:'У вас есть слова, подготовленные к добавлению. Если сейчас закрыть окно, они не будут сохранены.', btn_closeAnyway:'Закрыть без сохранения', btn_keepEditing:'Продолжить',
     btn_delete:'Удалить', h_delWord:'Удаление слова', h_delGroup:'Удаление группы',
     t_alreadyEmpty:'Уже пусто', t_cleared:'Словарь и группы очищены',
     t_noWordsGame:'Нет слов для игры', t_groupNoWords:'В группе нет слов', c_quit:'Прервать игру?',
@@ -898,10 +900,21 @@ function openModal(html){
   (f[0]||box).focus();
 }
 function closeModal(){
+  modalGuard=null;
   document.getElementById('modal').style.display='none';
   document.getElementById('modalBox').innerHTML='';
   const el=lastFocused;lastFocused=null;
   if(el&&document.contains(el)&&typeof el.focus==='function')el.focus();
+}
+let modalGuard=null;
+function requestCloseModal(){
+  if(modalGuard){
+    const g=modalGuard;
+    openConfirm({title:g.title,message:g.message,confirmLabel:g.confirmLabel,cancelLabel:g.cancelLabel,danger:true,
+      onConfirm:()=>{modalGuard=null;closeModal();}});
+    return;
+  }
+  closeModal();
 }
 let confirmPrevFocus=null,confirmCb=null;
 function openConfirm(opts){
@@ -1072,6 +1085,7 @@ function openBulkReview(items){
       <button class="btn ghost" id="brCancel">${t('btn_cancel')}</button>
       <button class="btn" id="brSave">${t('btn_addChecked')}</button>
     </div>`);
+  modalGuard={title:t('c_closeAdd'),message:t('c_closeAdd_msg'),confirmLabel:t('btn_closeAnyway'),cancelLabel:t('btn_keepEditing')};
   const brMk=document.getElementById('brMakeGroup');
   brMk.onchange=()=>{const inp=document.getElementById('brGroupName');inp.style.display=brMk.checked?'':'none';if(brMk.checked)inp.focus();};
   document.querySelectorAll('.rv-play').forEach(b=>b.onclick=()=>{const it=items[+b.dataset.i];speak(it.en,it.audio);});
@@ -2015,7 +2029,7 @@ document.getElementById('addEn').addEventListener('keydown',e=>{if(e.key==='Ente
 document.getElementById('newGroupName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('createGroup').click();}});
 document.getElementById('settingsBtn').onclick=openSettings;
 const modalEl=document.getElementById('modal');
-modalEl.addEventListener('click',e=>{if(e.target===modalEl)closeModal();});
+modalEl.addEventListener('click',e=>{if(e.target===modalEl)requestCloseModal();});
 modalEl.addEventListener('keydown',e=>{
   if(e.key!=='Tab')return;
   const f=getFocusable();if(!f.length){e.preventDefault();return;}
@@ -2034,7 +2048,7 @@ confirmEl.addEventListener('keydown',e=>{
   if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
   else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('confirmOverlay').style.display==='none'&&modalEl.style.display!=='none')closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('confirmOverlay').style.display==='none'&&modalEl.style.display!=='none')requestCloseModal();});
 let fitResizeT;window.addEventListener('resize',()=>{clearTimeout(fitResizeT);fitResizeT=setTimeout(()=>{if(game&&document.getElementById('cardGame').style.display!=='none')fitCards();},150);});
 </script>
 </body>
