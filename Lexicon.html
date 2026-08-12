@@ -22,6 +22,7 @@
     background-image:
       repeating-linear-gradient(90deg,rgba(0,0,0,.10) 0 2px,transparent 2px 7px),
       linear-gradient(135deg,#33261a,#241a12);
+    background-attachment:fixed;
   }
   header{padding:16px 22px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:20;
     color:#f1e3bf;border-bottom:4px double #d8b45a;
@@ -1012,18 +1013,21 @@ function mergeTranslations(a,b){
   return parts.join(', ');
 }
 function findWordByEn(en){const k=String(en||'').trim().toLowerCase();return k?state.words.find(w=>w.en.toLowerCase()===k):null;}
+function findWordByEnPos(en,pos){const k=String(en||'').trim().toLowerCase();if(!k)return null;const p=normPos(pos||'other');return state.words.find(w=>w.en.toLowerCase()===k&&normPos(w.pos||'other')===p)||null;}
 function addOrMergeWord(obj){
   const en=String(obj.en||'').trim();if(!en)return null;
-  const ex=findWordByEn(en);
+  const pos=normPos(obj.pos||'other');
+  let ex=findWordByEnPos(en,pos);
+  if(!ex&&pos!=='other'){const k=en.toLowerCase();ex=state.words.find(w=>w.en.toLowerCase()===k&&normPos(w.pos||'other')==='other')||null;if(ex)ex.pos=pos;}
   if(ex){
     if(obj.ru)ex.ru=mergeTranslations(ex.ru,obj.ru);
     if(!ex.ipa&&obj.ipa)ex.ipa=obj.ipa;
     if(!ex.audio&&obj.audio)ex.audio=obj.audio;
-    if((!ex.pos||ex.pos==='other')&&obj.pos&&obj.pos!=='other')ex.pos=obj.pos;
+    if((!ex.pos||ex.pos==='other')&&pos!=='other')ex.pos=pos;
     if(obj.stats){if(!ex.stats)ex.stats={seen:0,right:0,wrong:0};ex.stats.seen+=obj.stats.seen||0;ex.stats.right+=obj.stats.right||0;ex.stats.wrong+=obj.stats.wrong||0;}
     return {word:ex,merged:true};
   }
-  const w={id:uid(),en,ru:String(obj.ru||'').trim(),ipa:obj.ipa||'',pos:obj.pos||'other',audio:obj.audio||'',created:obj.created||Date.now(),stats:obj.stats||{seen:0,right:0,wrong:0}};
+  const w={id:uid(),en,ru:String(obj.ru||'').trim(),ipa:obj.ipa||'',pos:pos,audio:obj.audio||'',created:obj.created||Date.now(),stats:obj.stats||{seen:0,right:0,wrong:0}};
   state.words.push(w);
   return {word:w,merged:false};
 }

@@ -1,5 +1,11 @@
 # Lexicon
 
+## 1.0.3 - 12.08.2026
+
+A word that works as more than one part of speech is now kept as a separate entry for each one. Re-adding a word under a different part of speech creates its own card instead of piling the new meanings onto the entry you already had, so "run" the verb and "run" the noun sit in their own sections with their own translations. Adding the same word under a part of speech it already has still merges the translation as before.
+
+Fixed the page backdrop shifting shade between tabs: the dark background is now pinned to the window, so it looks identical on the long Dictionary list and the shorter Add, Groups and Cards tabs instead of the Dictionary standing out.
+
 ## 1.0.2 - 12.08.2026
 
 Adding a batch of words is safer now: the review window no longer closes if you misclick the dimmed area behind it or press Escape. Instead it asks whether to discard the words you've prepared, so a stray click can't wipe out a long list you were about to add.
