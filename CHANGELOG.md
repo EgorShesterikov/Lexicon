@@ -1,5 +1,9 @@
 # Lexicon
 
+## 1.0.4 - 12.08.2026
+
+Groups can be reordered: each group has up and down arrows to move it in the list, and the new order is saved. The name search now shows up as soon as you have more than a couple of groups, so it's easier to find the one you want.
+
 ## 1.0.3 - 12.08.2026
 
 A word that works as more than one part of speech is now kept as a separate entry for each one. Re-adding a word under a different part of speech creates its own card instead of piling the new meanings onto the entry you already had, so "run" the verb and "run" the noun sit in their own sections with their own translations. Adding the same word under a part of speech it already has still merges the translation as before.

@@ -137,6 +137,10 @@
   .grp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
   .grp-title{display:flex;align-items:center;gap:8px;cursor:pointer;min-width:0;flex:1 1 auto}
   .grp-title h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .grp-move{display:inline-flex;gap:4px}
+  .icon-btn.mv{width:32px;height:32px;font-size:12px}
+  .icon-btn:disabled{opacity:.35;cursor:not-allowed}
+  .icon-btn:disabled:hover{border-color:var(--line);color:var(--txt);background:#fffdf6}
   .grp-chevron{transition:transform .2s;color:var(--muted);flex:0 0 auto;font-size:14px}
   .grp-open .grp-chevron{transform:rotate(90deg)}
   .pick-row{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:#fffdf6;margin-bottom:6px;cursor:pointer}
@@ -533,6 +537,7 @@ const STR={
     listenW:en=>`Listen: ${en}`, ariaAddToGroup:en=>`Add “${en}” to a group`, ariaEdit:en=>`Edit “${en}”`,
     ariaDel:en=>`Delete “${en}”`, ariaRemoveFromGroup:en=>`Remove “${en}” from the group`,
     ariaRenameGroup:name=>`Rename group “${name}”`, ariaDelGroup:name=>`Delete group “${name}”`,
+    ariaMoveGroupUp:name=>`Move group “${name}” up`, ariaMoveGroupDown:name=>`Move group “${name}” down`,
     ariaInclude:en=>`Include “${en}”`, ariaEditRow:en=>`Detailed edit of “${en}”`,
     ariaRuFor:en=>`Translation of “${en}”`, ariaPosFor:en=>`Part of speech of “${en}”`,
     settingsSummary:(w,g)=>`In the dictionary: ${nWords(w)} · ${nGroups(g)}`
@@ -636,6 +641,7 @@ const STR={
     listenW:en=>`Прослушать: ${en}`, ariaAddToGroup:en=>`Добавить «${en}» в группу`, ariaEdit:en=>`Изменить «${en}»`,
     ariaDel:en=>`Удалить «${en}»`, ariaRemoveFromGroup:en=>`Убрать «${en}» из группы`,
     ariaRenameGroup:name=>`Переименовать группу «${name}»`, ariaDelGroup:name=>`Удалить группу «${name}»`,
+    ariaMoveGroupUp:name=>`Переместить группу «${name}» выше`, ariaMoveGroupDown:name=>`Переместить группу «${name}» ниже`,
     ariaInclude:en=>`Добавлять «${en}»`, ariaEditRow:en=>`Подробно отредактировать «${en}»`,
     ariaRuFor:en=>`Перевод «${en}»`, ariaPosFor:en=>`Часть речи «${en}»`,
     settingsSummary:(w,g)=>`В словаре: ${nWords(w)} · ${nGroups(g)}`
@@ -1341,14 +1347,16 @@ let groupFilter='';
 function renderGroups(){
   const list=document.getElementById('groupsList');list.innerHTML='';
   const toolbar=document.getElementById('groupsToolbar');
-  if(toolbar)toolbar.style.display=state.groups.length>5?'':'none';
+  if(toolbar)toolbar.style.display=state.groups.length>2?'':'none';
   if(!state.groups.length){list.innerHTML='<div class="empty">'+esc(t('empty_groups'))+'</div>';return;}
   const q=groupFilter.trim().toLowerCase();
   const groups=q?state.groups.filter(g=>g.name.toLowerCase().includes(q)):state.groups;
   if(!groups.length){list.innerHTML='<div class="empty">'+esc(t('empty_groupSearch'))+'</div>';return;}
+  const canReorder=!q&&state.groups.length>1;
   groups.forEach(g=>{
     const open=expandedGroups.has(g.id);
-    const card=document.createElement('div');card.className='card'+(open?' grp-open':'');
+    const gi=state.groups.findIndex(x=>x.id===g.id);
+    const card=document.createElement('div');card.className='card'+(open?' grp-open':'');card.dataset.gid=g.id;
     const gw=g.wordIds.map(id=>state.words.find(w=>w.id===id)).filter(Boolean);
     card.innerHTML=`
       <div class="grp-head">
@@ -1357,6 +1365,10 @@ function renderGroups(){
           <h2 style="margin:0">📁 ${esc(g.name)} <span class="muted" style="font-weight:400">· ${nWords(g.wordIds.length)}</span></h2>
         </div>
         <div class="split">
+          ${canReorder?`<span class="grp-move">
+            <button class="icon-btn mv" data-up ${gi<=0?'disabled':''} aria-label="${esc(t('ariaMoveGroupUp',g.name))}">▲</button>
+            <button class="icon-btn mv" data-down ${gi>=state.groups.length-1?'disabled':''} aria-label="${esc(t('ariaMoveGroupDown',g.name))}">▼</button>
+          </span>`:''}
           <button class="btn sm" data-play>${t('grp_learn')}</button>
           <button class="btn ghost sm" data-add>${t('grp_addWords')}</button>
           <button class="icon-btn" data-ren aria-label="${esc(t('ariaRenameGroup',g.name))}">✏️</button>
@@ -1393,8 +1405,21 @@ function renderGroups(){
     card.querySelector('[data-ren]').onclick=()=>renameGroupDialog(g);
     card.querySelector('[data-add]').onclick=()=>openGroupWordsDialog(g);
     card.querySelector('[data-play]').onclick=()=>goToCardsWithGroup(g.id);
+    if(canReorder){
+      const up=card.querySelector('[data-up]'),dn=card.querySelector('[data-down]');
+      if(up)up.onclick=()=>moveGroup(g.id,-1);
+      if(dn)dn.onclick=()=>moveGroup(g.id,1);
+    }
     list.appendChild(card);
   });
+}
+function moveGroup(id,dir){
+  const i=state.groups.findIndex(g=>g.id===id);const j=i+dir;
+  if(i<0||j<0||j>=state.groups.length)return;
+  const [g]=state.groups.splice(i,1);state.groups.splice(j,0,g);
+  save();renderGroups();
+  const moved=document.querySelector('#groupsList .card[data-gid="'+id+'"]');
+  if(moved){const b=moved.querySelector(dir<0?'[data-up]':'[data-down]');(b&&!b.disabled?b:moved.querySelector('[data-toggle]')).focus();}
 }
 function renameGroupDialog(g){
   openModal(`<h2>${t('h_renameGroup')}</h2>
