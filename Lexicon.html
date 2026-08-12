@@ -78,7 +78,8 @@
   .pill{display:inline-block;background:#fffdf6;border:1px solid var(--line);border-radius:4px;
     padding:3px 11px;font-size:13px;color:var(--txt);margin:0 6px 6px 0}
   .word-item{display:flex;align-items:center;gap:12px;padding:10px 8px;
-    border-bottom:1px dotted var(--line);background:transparent;margin-bottom:0}
+    border-bottom:1px dotted var(--line);background:transparent;margin-bottom:0;
+    content-visibility:auto;contain-intrinsic-size:auto 60px}
   .word-item:hover{background:rgba(122,35,33,.05)}
   .word-item .en{font-weight:700;font-size:17px;font-family:var(--serif);color:var(--txt)}
   .word-item .ipa{color:var(--accent2);font-size:14px;font-style:italic}
@@ -1167,7 +1168,7 @@ function editReviewItem(items,i){
 }
 
 function wordRow(w){
-  const div=document.createElement('div');div.className='word-item';
+  const div=document.createElement('div');div.className='word-item';div.dataset.id=w.id;
   div.innerHTML=`
     <button class="icon-btn play" aria-label="${esc(t('listenW',w.en))}">🔊</button>
     <div class="grow">
@@ -1177,17 +1178,27 @@ function wordRow(w){
     <button class="icon-btn addg" aria-label="${esc(t('ariaAddToGroup',w.en))}">📁</button>
     <button class="icon-btn edit" aria-label="${esc(t('ariaEdit',w.en))}">✏️</button>
     <button class="icon-btn del" aria-label="${esc(t('ariaDel',w.en))}">🗑</button>`;
-  div.querySelector('.play').onclick=()=>speak(w.en,w.audio);
-  div.querySelector('.del').onclick=()=>openConfirm({title:t('h_delWord'),message:t('delWord',w.en),confirmLabel:t('btn_delete'),danger:true,onConfirm:()=>{state.words=state.words.filter(x=>x.id!==w.id);state.groups.forEach(g=>g.wordIds=g.wordIds.filter(id=>id!==w.id));save();renderDict();}});
-  div.querySelector('.edit').onclick=()=>editWord(w);
-  div.querySelector('.addg').onclick=()=>addToGroupDialog(w);
   return div;
 }
+document.getElementById('dictList').addEventListener('click',e=>{
+  const btn=e.target.closest('button');if(!btn)return;
+  const row=btn.closest('.word-item');if(!row)return;
+  const w=state.words.find(x=>x.id===row.dataset.id);if(!w)return;
+  if(btn.classList.contains('play'))speak(w.en,w.audio);
+  else if(btn.classList.contains('del'))openConfirm({title:t('h_delWord'),message:t('delWord',w.en),confirmLabel:t('btn_delete'),danger:true,onConfirm:()=>{state.words=state.words.filter(x=>x.id!==w.id);state.groups.forEach(g=>g.wordIds=g.wordIds.filter(id=>id!==w.id));save();renderDict();}});
+  else if(btn.classList.contains('edit'))editWord(w);
+  else if(btn.classList.contains('addg'))addToGroupDialog(w);
+});
 function wordSearchMatch(w,q){
   if(!q)return true;
   const en=w.en.toLowerCase(),ru=(w.ru||'').toLowerCase();
   if(q.length===1)return en.startsWith(q)||ru.split(/[;,]/).some(p=>p.trim().startsWith(q));
   return en.includes(q)||ru.includes(q);
+}
+function wordExactMatch(w,q){
+  if(!q)return false;
+  if(w.en.toLowerCase()===q)return true;
+  return (w.ru||'').toLowerCase().split(/[;,\/]/).some(p=>p.trim()===q);
 }
 function renderDict(){
   const q=document.getElementById('search').value.trim().toLowerCase();
@@ -1200,19 +1211,27 @@ function renderDict(){
     return true;
   });
   if(!words.length){list.innerHTML='<div class="empty">'+(state.words.length?esc(t('empty_search')):esc(t('empty_dict')))+'</div>';return;}
-  if(sort==='recent'){
-    words.slice().sort((a,b)=>(b.created||0)-(a.created||0)).forEach(w=>list.appendChild(wordRow(w)));
-    return;
+  const frag=document.createDocumentFragment();
+  if(q){
+    // While searching, show a flat list with exact matches (word or a translation) first.
+    const cmp=sort==='recent'?(a,b)=>(b.created||0)-(a.created||0):(a,b)=>a.en.localeCompare(b.en);
+    words.sort((a,b)=>{const r=(wordExactMatch(a,q)?0:1)-(wordExactMatch(b,q)?0:1);return r||cmp(a,b);});
+    words.forEach(w=>frag.appendChild(wordRow(w)));
+  }else if(sort==='recent'){
+    words.sort((a,b)=>(b.created||0)-(a.created||0)).forEach(w=>frag.appendChild(wordRow(w)));
+  }else{
+    const groups={};
+    words.forEach(w=>{(groups[w.pos]=groups[w.pos]||[]).push(w);});
+    POS_KEYS.forEach(pos=>{
+      if(!groups[pos])return;
+      const h=document.createElement('h3');h.textContent=posLabel(pos)+' · '+groups[pos].length;frag.appendChild(h);
+      groups[pos].sort((a,b)=>a.en.localeCompare(b.en)).forEach(w=>frag.appendChild(wordRow(w)));
+    });
   }
-  const groups={};
-  words.forEach(w=>{(groups[w.pos]=groups[w.pos]||[]).push(w);});
-  POS_KEYS.forEach(pos=>{
-    if(!groups[pos])return;
-    const h=document.createElement('h3');h.textContent=posLabel(pos)+' · '+groups[pos].length;list.appendChild(h);
-    groups[pos].sort((a,b)=>a.en.localeCompare(b.en)).forEach(w=>list.appendChild(wordRow(w)));
-  });
+  list.appendChild(frag);
 }
-document.getElementById('search').oninput=renderDict;
+let searchDeb;
+document.getElementById('search').oninput=()=>{clearTimeout(searchDeb);searchDeb=setTimeout(renderDict,120);};
 document.getElementById('posFilter').onchange=renderDict;
 document.getElementById('dictSort').onchange=renderDict;
 
@@ -1378,18 +1397,29 @@ function renderGroups(){
       ${timerLine(g)}
       <div data-words class="grp-words" style="${open?'':'display:none'}"></div>`;
     const wc=card.querySelector('[data-words]');
+    let wcBound=false;
     function fillWords(){
       wc.innerHTML='';
       if(!gw.length){wc.innerHTML='<div class="muted" style="font-size:13px">'+esc(t('grp_empty'))+'</div>';return;}
+      const frag=document.createDocumentFragment();
       gw.forEach(w=>{
-        const r=document.createElement('div');r.className='word-item';
+        const r=document.createElement('div');r.className='word-item';r.dataset.id=w.id;
         r.innerHTML=`<button class="icon-btn play" aria-label="${esc(t('listenW',w.en))}">🔊</button>
           <div class="grow"><div><span class="en" lang="en">${esc(cap(w.en))}</span> <span class="ipa">${esc(w.ipa||'')}</span> <span class="pill" style="margin:0;font-size:11px">${esc(posLabel(w.pos))}</span></div><div class="ru">${esc(cap(w.ru||'—'))}</div></div>
           <button class="icon-btn rm" aria-label="${esc(t('ariaRemoveFromGroup',w.en))}">✖</button>`;
-        r.querySelector('.play').onclick=()=>speak(w.en,w.audio);
-        r.querySelector('.rm').onclick=()=>{g.wordIds=g.wordIds.filter(id=>id!==w.id);save();renderGroups();};
-        wc.appendChild(r);
+        frag.appendChild(r);
       });
+      wc.appendChild(frag);
+      if(!wcBound){
+        wcBound=true;
+        wc.addEventListener('click',e=>{
+          const btn=e.target.closest('button');if(!btn)return;
+          const row=btn.closest('.word-item');if(!row)return;
+          const w=state.words.find(x=>x.id===row.dataset.id);if(!w)return;
+          if(btn.classList.contains('play'))speak(w.en,w.audio);
+          else if(btn.classList.contains('rm')){g.wordIds=g.wordIds.filter(id=>id!==w.id);save();renderGroups();}
+        });
+      }
     }
     if(open)fillWords();
     const head=card.querySelector('[data-toggle]');

@@ -1,5 +1,11 @@
 # Lexicon
 
+## 1.0.5 - 12.08.2026
+
+Dictionary search now puts an exact match first. If your query exactly matches a word or one of its translations, that entry is shown at the top, with the remaining partial matches below it.
+
+Large dictionaries and groups scroll smoothly now. Off-screen rows are skipped by the browser until you reach them, row actions share a single handler instead of one per row, and search is debounced — so long lists no longer stutter while scrolling or typing.
+
 ## 1.0.4 - 12.08.2026
 
 Groups can be reordered: each group has up and down arrows to move it in the list, and the new order is saved. The name search now shows up as soon as you have more than a couple of groups, so it's easier to find the one you want.
