@@ -142,6 +142,10 @@
   .icon-btn.mv{width:32px;height:32px;font-size:12px}
   .icon-btn:disabled{opacity:.35;cursor:not-allowed}
   .icon-btn:disabled:hover{border-color:var(--line);color:var(--txt);background:#fffdf6}
+  .pager{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:18px 4px 2px}
+  .pager.pager-top{margin:2px 4px 16px}
+  .pager .btn.sm{min-width:40px;padding:7px 10px}
+  .pager-info{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;margin:0 4px}
   .grp-chevron{transition:transform .2s;color:var(--muted);flex:0 0 auto;font-size:14px}
   .grp-open .grp-chevron{transform:rotate(90deg)}
   .pick-row{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:#fffdf6;margin-bottom:6px;cursor:pointer}
@@ -303,7 +307,9 @@
           <option value="recent" data-i18n="sort_recent">Newest first</option>
         </select>
       </div>
+      <div id="dictPagerTop" class="pager pager-top" style="display:none"></div>
       <div id="dictList"></div>
+      <div id="dictPager" class="pager" style="display:none"></div>
     </div>
   </section>
 
@@ -318,7 +324,9 @@
     <div class="toolbar" id="groupsToolbar" style="margin-bottom:14px;display:none">
       <input id="groupSearch" data-i18n-ph="ph_groupSearch" data-i18n-aria="groupSearchAria">
     </div>
+    <div id="groupsPagerTop" class="pager pager-top" style="display:none"></div>
     <div id="groupsList"></div>
+    <div id="groupsPager" class="pager" style="display:none"></div>
   </section>
 
   <section id="tab-cards" role="tabpanel" aria-labelledby="tabbtn-cards" tabindex="0" style="display:none">
@@ -456,6 +464,8 @@ const STR={
     opt_allPos:'All parts of speech', posFilterAria:'Filter by part of speech',
     sort_pos:'By part of speech', sort_alpha:'A → Z', sort_recent:'Newest first', sortAria:'Sort',
     empty_dict:'Nothing yet. Add words on the “Add” tab.', empty_search:'Nothing found.',
+    pagerPrev:'Previous page', pagerNext:'Next page', pagerFirst:'First page', pagerLast:'Last page',
+    pagerInfo:(a,b,c)=>`${a}–${b} of ${c}`, pagerPageAria:(a,b)=>`Page ${a} of ${b}`,
     h_groups:'My review groups', ph_newGroup:'Group name, e.g. “Lesson 5”', newGroupAria:'New group name', btn_create:'Create',
     empty_groups:'No groups yet. Create a group to review words.',
     grp_learn:'🎴 Learn', grp_empty:'Empty. Add words from “Dictionary” with the 📁 button.',
@@ -560,6 +570,8 @@ const STR={
     opt_allPos:'Все части речи', posFilterAria:'Фильтр по части речи',
     sort_pos:'По частям речи', sort_alpha:'А → Я', sort_recent:'Сначала новые', sortAria:'Сортировка',
     empty_dict:'Пока пусто. Добавьте слова на вкладке «Добавить».', empty_search:'Ничего не найдено.',
+    pagerPrev:'Предыдущая страница', pagerNext:'Следующая страница', pagerFirst:'Первая страница', pagerLast:'Последняя страница',
+    pagerInfo:(a,b,c)=>`${a}–${b} из ${c}`, pagerPageAria:(a,b)=>`Страница ${a} из ${b}`,
     h_groups:'Мои группы для повторения', ph_newGroup:'Название группы, напр. «Урок 5»', newGroupAria:'Название новой группы', btn_create:'Создать',
     empty_groups:'Групп пока нет. Создайте группу для повторения слов.',
     grp_learn:'🎴 Учить', grp_empty:'Пусто. Добавляйте слова из «Словаря» кнопкой 📁.',
@@ -1200,40 +1212,63 @@ function wordExactMatch(w,q){
   if(w.en.toLowerCase()===q)return true;
   return (w.ru||'').toLowerCase().split(/[;,\/]/).some(p=>p.trim()===q);
 }
+function makePager(el,page,pages,total,start,end,go){
+  if(!el)return;
+  if(pages<=1){el.style.display='none';el.innerHTML='';return;}
+  el.style.display='';
+  el.innerHTML=`
+    <button class="btn ghost sm" data-go="1" ${page<=1?'disabled':''} aria-label="${esc(t('pagerFirst'))}">«</button>
+    <button class="btn ghost sm" data-go="${page-1}" ${page<=1?'disabled':''} aria-label="${esc(t('pagerPrev'))}">‹</button>
+    <span class="pager-info" role="status" aria-live="polite" title="${esc(t('pagerPageAria',page,pages))}">${esc(t('pagerInfo',start+1,end,total))}</span>
+    <button class="btn ghost sm" data-go="${page+1}" ${page>=pages?'disabled':''} aria-label="${esc(t('pagerNext'))}">›</button>
+    <button class="btn ghost sm" data-go="${pages}" ${page>=pages?'disabled':''} aria-label="${esc(t('pagerLast'))}">»</button>`;
+  el.querySelectorAll('button[data-go]').forEach(b=>{b.onclick=()=>{if(b.disabled)return;const n=+b.dataset.go;if(n>=1&&n<=pages&&n!==page)go(n);};});
+}
+const DICT_PAGE=50;
+let dictPage=1;
 function renderDict(){
   const q=document.getElementById('search').value.trim().toLowerCase();
   const pf=document.getElementById('posFilter').value;
   const sort=document.getElementById('dictSort').value;
   const list=document.getElementById('dictList');list.innerHTML='';
+  const pagers=[document.getElementById('dictPagerTop'),document.getElementById('dictPager')];
+  const hidePagers=()=>pagers.forEach(p=>{if(p){p.style.display='none';p.innerHTML='';}});
   let words=state.words.filter(w=>{
     if(pf&&w.pos!==pf)return false;
     if(q&&!wordSearchMatch(w,q))return false;
     return true;
   });
-  if(!words.length){list.innerHTML='<div class="empty">'+(state.words.length?esc(t('empty_search')):esc(t('empty_dict')))+'</div>';return;}
-  const frag=document.createDocumentFragment();
+  if(!words.length){list.innerHTML='<div class="empty">'+(state.words.length?esc(t('empty_search')):esc(t('empty_dict')))+'</div>';hidePagers();return;}
+  let ordered,counts=null,grouped=false;
   if(q){
-    // While searching, show a flat list with exact matches (word or a translation) first.
     const cmp=sort==='recent'?(a,b)=>(b.created||0)-(a.created||0):(a,b)=>a.en.localeCompare(b.en);
-    words.sort((a,b)=>{const r=(wordExactMatch(a,q)?0:1)-(wordExactMatch(b,q)?0:1);return r||cmp(a,b);});
-    words.forEach(w=>frag.appendChild(wordRow(w)));
+    ordered=words.sort((a,b)=>{const r=(wordExactMatch(a,q)?0:1)-(wordExactMatch(b,q)?0:1);return r||cmp(a,b);});
   }else if(sort==='recent'){
-    words.sort((a,b)=>(b.created||0)-(a.created||0)).forEach(w=>frag.appendChild(wordRow(w)));
+    ordered=words.sort((a,b)=>(b.created||0)-(a.created||0));
   }else{
+    grouped=true;counts={};ordered=[];
     const groups={};
     words.forEach(w=>{(groups[w.pos]=groups[w.pos]||[]).push(w);});
-    POS_KEYS.forEach(pos=>{
-      if(!groups[pos])return;
-      const h=document.createElement('h3');h.textContent=posLabel(pos)+' · '+groups[pos].length;frag.appendChild(h);
-      groups[pos].sort((a,b)=>a.en.localeCompare(b.en)).forEach(w=>frag.appendChild(wordRow(w)));
-    });
+    POS_KEYS.forEach(pos=>{if(!groups[pos])return;counts[pos]=groups[pos].length;groups[pos].sort((a,b)=>a.en.localeCompare(b.en)).forEach(w=>ordered.push(w));});
+  }
+  const total=ordered.length;
+  const pages=Math.ceil(total/DICT_PAGE);
+  if(dictPage>pages)dictPage=pages;if(dictPage<1)dictPage=1;
+  const start=(dictPage-1)*DICT_PAGE,end=Math.min(start+DICT_PAGE,total);
+  const frag=document.createDocumentFragment();
+  let lastPos=null;
+  for(let i=start;i<end;i++){
+    const w=ordered[i];
+    if(grouped&&w.pos!==lastPos){lastPos=w.pos;const h=document.createElement('h3');h.textContent=posLabel(w.pos)+' · '+counts[w.pos];frag.appendChild(h);}
+    frag.appendChild(wordRow(w));
   }
   list.appendChild(frag);
+  pagers.forEach(p=>makePager(p,dictPage,pages,total,start,end,n=>{dictPage=n;renderDict();window.scrollTo(0,0);}));
 }
 let searchDeb;
-document.getElementById('search').oninput=()=>{clearTimeout(searchDeb);searchDeb=setTimeout(renderDict,120);};
-document.getElementById('posFilter').onchange=renderDict;
-document.getElementById('dictSort').onchange=renderDict;
+document.getElementById('search').oninput=()=>{clearTimeout(searchDeb);searchDeb=setTimeout(()=>{dictPage=1;renderDict();},120);};
+document.getElementById('posFilter').onchange=()=>{dictPage=1;renderDict();};
+document.getElementById('dictSort').onchange=()=>{dictPage=1;renderDict();};
 
 function editWord(w){
   openModal(`<h2>${t('h_editWord')}</h2>
@@ -1358,20 +1393,31 @@ document.getElementById('createGroup').onclick=()=>{
   const name=document.getElementById('newGroupName').value.trim();
   if(!name){toast(t('t_enterName'),true);return;}
   state.groups.push({id:uid(),name,wordIds:[]});save();
+  groupFilter='';document.getElementById('groupSearch').value='';
+  groupsPage=Math.ceil(state.groups.length/GROUPS_PAGE);
   document.getElementById('newGroupName').value='';renderGroups();document.getElementById('newGroupName').focus();toast(t('t_groupCreated'));
 };
-document.getElementById('groupSearch').oninput=e=>{groupFilter=e.target.value;renderGroups();};
+document.getElementById('groupSearch').oninput=e=>{groupFilter=e.target.value;groupsPage=1;renderGroups();};
 let expandedGroups=new Set();
 let groupFilter='';
+const GROUPS_PAGE=10;
+let groupsPage=1;
 function renderGroups(){
   const list=document.getElementById('groupsList');list.innerHTML='';
+  const pagers=[document.getElementById('groupsPagerTop'),document.getElementById('groupsPager')];
+  const hidePagers=()=>pagers.forEach(p=>{if(p){p.style.display='none';p.innerHTML='';}});
   const toolbar=document.getElementById('groupsToolbar');
   if(toolbar)toolbar.style.display=state.groups.length>2?'':'none';
-  if(!state.groups.length){list.innerHTML='<div class="empty">'+esc(t('empty_groups'))+'</div>';return;}
+  if(!state.groups.length){list.innerHTML='<div class="empty">'+esc(t('empty_groups'))+'</div>';hidePagers();return;}
   const q=groupFilter.trim().toLowerCase();
-  const groups=q?state.groups.filter(g=>g.name.toLowerCase().includes(q)):state.groups;
-  if(!groups.length){list.innerHTML='<div class="empty">'+esc(t('empty_groupSearch'))+'</div>';return;}
+  const groupsAll=q?state.groups.filter(g=>g.name.toLowerCase().includes(q)):state.groups;
+  if(!groupsAll.length){list.innerHTML='<div class="empty">'+esc(t('empty_groupSearch'))+'</div>';hidePagers();return;}
   const canReorder=!q&&state.groups.length>1;
+  const total=groupsAll.length;
+  const pages=Math.ceil(total/GROUPS_PAGE);
+  if(groupsPage>pages)groupsPage=pages;if(groupsPage<1)groupsPage=1;
+  const start=(groupsPage-1)*GROUPS_PAGE,end=Math.min(start+GROUPS_PAGE,total);
+  const groups=groupsAll.slice(start,end);
   groups.forEach(g=>{
     const open=expandedGroups.has(g.id);
     const gi=state.groups.findIndex(x=>x.id===g.id);
@@ -1442,11 +1488,13 @@ function renderGroups(){
     }
     list.appendChild(card);
   });
+  pagers.forEach(p=>makePager(p,groupsPage,pages,total,start,end,n=>{groupsPage=n;renderGroups();window.scrollTo(0,0);}));
 }
 function moveGroup(id,dir){
   const i=state.groups.findIndex(g=>g.id===id);const j=i+dir;
   if(i<0||j<0||j>=state.groups.length)return;
   const [g]=state.groups.splice(i,1);state.groups.splice(j,0,g);
+  groupsPage=Math.floor(j/GROUPS_PAGE)+1; // follow the moved group if it crosses a page boundary
   save();renderGroups();
   const moved=document.querySelector('#groupsList .card[data-gid="'+id+'"]');
   if(moved){const b=moved.querySelector(dir<0?'[data-up]':'[data-down]');(b&&!b.disabled?b:moved.querySelector('[data-toggle]')).focus();}

@@ -1,5 +1,9 @@
 # Lexicon
 
+## 1.0.6 - 12.08.2026
+
+The dictionary and the groups list are now split into pages when there are a lot of items — 50 words per page and 10 groups per page. The « ‹ › » controls with an "X–Y of Z" counter appear both above and below the list, so you can page through without scrolling to the end. Search, filter and sort jump back to the first page, and reordering a group or creating a new one follows it to whichever page it lands on — so a long collection stays quick to render and easy to page through.
+
 ## 1.0.5 - 12.08.2026
 
 Dictionary search now puts an exact match first. If your query exactly matches a word or one of its translations, that entry is shown at the top, with the remaining partial matches below it.
