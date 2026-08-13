@@ -1003,7 +1003,8 @@ function renderVariants(v,cfg){
   const box=document.getElementById(cfg.box);box.innerHTML='';
   const map={};
   v.groups.forEach(g=>{if(!g.terms.length)return;(map[g.pos]=map[g.pos]||[]).push(...g.terms);});
-  const groups=Object.keys(map).map(pos=>({pos,terms:Array.from(new Set(map[pos])).slice(0,8)}));
+  const uniqTerms=arr=>{const out=[],seen=new Set();arr.forEach(term=>{const k=canonVariant(term)||String(term).toLowerCase();if(k&&!seen.has(k)){seen.add(k);out.push(term);}});return out;};
+  const groups=Object.keys(map).map(pos=>({pos,terms:uniqTerms(map[pos]).slice(0,8)}));
   if(!groups.length){box.style.display='none';return;}
   box.style.display='';
   let html=`<label>${t('variants_label')}</label>`;
@@ -1026,11 +1027,19 @@ document.getElementById('previewPlay').onclick=()=>{
   else toast(t('t_enterWord'),true);
 };
 document.getElementById('addEn').addEventListener('input',()=>{document.getElementById('addEn').dataset.audio='';});
-function mergeTranslations(a,b){
+function canonVariant(s){
+  return String(s==null?'':s).toLowerCase().replace(/ё/g,'е').replace(/\([^)]*\)/g,' ').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();
+}
+function dedupeTranslations(str){
   const parts=[];const seen=new Set();
-  [a,b].forEach(src=>String(src||'').split(/\s*[;,]\s*/).forEach(p=>{p=p.trim();if(p&&!seen.has(p.toLowerCase())){seen.add(p.toLowerCase());parts.push(p);}}));
+  String(str==null?'':str).split(/\s*[;,]\s*/).forEach(p=>{
+    p=p.trim();if(!p)return;
+    const key=canonVariant(p)||p.toLowerCase();
+    if(!seen.has(key)){seen.add(key);parts.push(p);}
+  });
   return parts.join(', ');
 }
+function mergeTranslations(a,b){return dedupeTranslations([a,b].filter(Boolean).join(', '));}
 function findWordByEn(en){const k=String(en||'').trim().toLowerCase();return k?state.words.find(w=>w.en.toLowerCase()===k):null;}
 function findWordByEnPos(en,pos){const k=String(en||'').trim().toLowerCase();if(!k)return null;const p=normPos(pos||'other');return state.words.find(w=>w.en.toLowerCase()===k&&normPos(w.pos||'other')===p)||null;}
 function addOrMergeWord(obj){
@@ -1046,7 +1055,7 @@ function addOrMergeWord(obj){
     if(obj.stats){if(!ex.stats)ex.stats={seen:0,right:0,wrong:0};ex.stats.seen+=obj.stats.seen||0;ex.stats.right+=obj.stats.right||0;ex.stats.wrong+=obj.stats.wrong||0;}
     return {word:ex,merged:true};
   }
-  const w={id:uid(),en,ru:String(obj.ru||'').trim(),ipa:obj.ipa||'',pos:pos,audio:obj.audio||'',created:obj.created||Date.now(),stats:obj.stats||{seen:0,right:0,wrong:0}};
+  const w={id:uid(),en,ru:dedupeTranslations(obj.ru),ipa:obj.ipa||'',pos:pos,audio:obj.audio||'',created:obj.created||Date.now(),stats:obj.stats||{seen:0,right:0,wrong:0}};
   state.words.push(w);
   return {word:w,merged:false};
 }
@@ -1307,7 +1316,7 @@ function editWord(w){
   document.getElementById('editSave').onclick=()=>{
     const en=document.getElementById('editEn').value.trim();
     if(!en){toast(t('t_enterWord'),true);return;}
-    w.en=en;w.ru=document.getElementById('editRu').value.trim();
+    w.en=en;w.ru=dedupeTranslations(document.getElementById('editRu').value);
     w.ipa=document.getElementById('editIpa').value.trim();
     w.pos=document.getElementById('editPos').value||'other';w.audio=audio;
     save();const y=window.scrollY;renderDict();closeModal();window.scrollTo(0,y);toast(t('t_changed'));
@@ -1767,10 +1776,14 @@ function normAns(s){
 function stripLead(s,lang){return (lang==='en')?s.replace(/^(to|a|an|the)\s+/,'').trim():s;}
 function answerMatches(typed,correct,lang){
   const ans=normAns(typed);if(!ans)return false;
-  const variants=String(correct==null?'':correct).split(/[,;\/]|\s[—–-]\s/).map(v=>normAns(v)).filter(Boolean);
-  if(!variants.length)return false;
   const cand=new Set();
-  variants.forEach(v=>{cand.add(v);const st=stripLead(v,lang);if(st)cand.add(st);});
+  const add=v=>{if(v){cand.add(v);const st=stripLead(v,lang);if(st)cand.add(st);}};
+  String(correct==null?'':correct).split(/[,;\/]|\s[—–-]\s/).forEach(raw=>{
+    // Accept the answer with or without any "(…)" clarification.
+    add(normAns(raw));
+    add(normAns(raw.replace(/\([^)]*\)/g,' ')));
+  });
+  if(!cand.size)return false;
   const ansStr=stripLead(ans,lang);
   return cand.has(ans)||cand.has(ansStr);
 }

@@ -1,5 +1,11 @@
 # Lexicon
 
+## 1.0.7 - 12.08.2026
+
+Translation variants are kept unique regardless of case: "Кот" and "кот" are no longer stored as two separate meanings, only one is kept.
+
+Parenthetical clarifications like "(разг.)" or "(домашняя)" are ignored where they shouldn't matter. A translation such as "кошка (домашняя)" no longer counts as a new variant next to "кошка" when a word is added, and in the Cards test either the full answer or the version without the bracketed part is accepted as correct.
+
 ## 1.0.6 - 12.08.2026
 
 The dictionary and the groups list are now split into pages when there are a lot of items — 50 words per page and 10 groups per page. The « ‹ › » controls with an "X–Y of Z" counter appear both above and below the list, so you can page through without scrolling to the end. Search, filter and sort jump back to the first page, and reordering a group or creating a new one follows it to whichever page it lands on — so a long collection stays quick to render and easy to page through.
