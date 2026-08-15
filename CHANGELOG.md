@@ -1,5 +1,15 @@
 # Lexicon
 
+## 1.0.8 - 12.08.2026
+
+Misclicks can no longer wipe out your work: the edit-word window and the add-words-to-group window now ask before closing if you click outside them or press Escape, the same way the bulk-add review already did.
+
+Groups can be marked as favorites. A star pins a group to a Favorites list; once you have any favorites, an "All / Favorites" switch appears above the list so you can jump to just the ones you care about. Reordering still works in the All view.
+
+Words can be edited straight from inside a group — each word in an opened group now has a pencil button that opens the same editor as the dictionary.
+
+The Cards test gets a "Dispute" button. If an answer was marked wrong but was actually right — a typo, or you didn't finish typing — one tap counts it as correct and updates the score.
+
 ## 1.0.7 - 12.08.2026
 
 Translation variants are kept unique regardless of case: "Кот" and "кот" are no longer stored as two separate meanings, only one is kept.

@@ -144,6 +144,13 @@
   .icon-btn:disabled:hover{border-color:var(--line);color:var(--txt);background:#fffdf6}
   .pager{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:18px 4px 2px}
   .pager.pager-top{margin:2px 4px 16px}
+  .gv-bar{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 14px}
+  .gv-bar .seg{background:var(--card2);color:var(--muted);border:1px solid var(--line);border-radius:8px;
+    padding:7px 13px;cursor:pointer;font-family:var(--serif);font-weight:600;font-size:14px;transition:.15s}
+  .gv-bar .seg:hover:not(.active){color:var(--accent);border-color:var(--accent)}
+  .gv-bar .seg.active{background:var(--accent);color:#f7ecd2;border-color:var(--accent)}
+  .gv-bar .seg .seg-n{opacity:.75;font-weight:400;font-size:12px;margin-left:2px}
+  .icon-btn.grp-fav.on{color:#d8a520;border-color:#d8a520}
   .pager .btn.sm{min-width:40px;padding:7px 10px}
   .pager-info{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;margin:0 4px}
   .grp-chevron{transition:transform .2s;color:var(--muted);flex:0 0 auto;font-size:14px}
@@ -321,6 +328,7 @@
         <button class="btn" id="createGroup" data-i18n="btn_create">Create</button>
       </div>
     </div>
+    <div id="groupsView" class="gv-bar" style="display:none"></div>
     <div class="toolbar" id="groupsToolbar" style="margin-bottom:14px;display:none">
       <input id="groupSearch" data-i18n-ph="ph_groupSearch" data-i18n-aria="groupSearchAria">
     </div>
@@ -412,6 +420,7 @@
         <div class="fc-controls" id="fcControls">
           <button class="btn bad" id="fcWrong" data-i18n="btn_dontknow" style="display:none">✗ Didn’t know</button>
           <button class="btn good" id="fcRight" data-i18n="btn_knew" style="display:none">✓ Knew</button>
+          <button class="btn ghost" id="fcDispute" data-i18n="btn_dispute" data-i18n-aria="ariaDispute" style="display:none">⚖ Dispute</button>
           <button class="btn" id="fcNext" data-i18n="btn_next" style="display:none">Next word →</button>
         </div>
         <button class="btn ghost sm" id="fcQuit" data-i18n="btn_quit">Quit</button>
@@ -502,6 +511,12 @@ const STR={
     c_reset1:'Delete ALL words and groups? This cannot be undone.', c_reset2:'Are you sure? Final warning — the data will be erased.',
     btn_ok:'OK', quit_msg:'You’ll return to the card setup.', reset_confirm:'Yes, delete everything', reset_t2:'Final warning',
     c_closeAdd:'Discard the words you’re adding?', c_closeAdd_msg:'You have words prepared to add. If you close this window now, they will not be saved.', btn_closeAnyway:'Close without saving', btn_keepEditing:'Keep editing',
+    c_closeEdit:'Discard changes?', c_closeEdit_msg:'If you close this window now, your changes will not be saved.',
+    c_closeWin:'Close this window?', c_closeWin_msg:'',
+    gv_all:'All', gv_fav:'Favorites',
+    empty_fav:'No favorite groups yet. Tap ☆ on a group to add it here.',
+    ariaFav:name=>`Add “${name}” to favorites`, ariaUnfav:name=>`Remove “${name}” from favorites`,
+    btn_dispute:'⚖ Dispute', ariaDispute:'Mark answer as correct', t_disputed:'Counted as correct',
     btn_delete:'Delete', h_delWord:'Delete word', h_delGroup:'Delete group',
     t_alreadyEmpty:'Already empty', t_cleared:'Dictionary and groups cleared',
     t_noWordsGame:'No words for the game', t_groupNoWords:'The group has no words', c_quit:'Quit the game?',
@@ -608,6 +623,12 @@ const STR={
     c_reset1:'Удалить ВСЕ слова и группы? Это действие необратимо.', c_reset2:'Точно? Последнее предупреждение — данные будут стёрты.',
     btn_ok:'OK', quit_msg:'Вы вернётесь к настройкам карточек.', reset_confirm:'Да, удалить всё', reset_t2:'Последнее предупреждение',
     c_closeAdd:'Отменить добавление слов?', c_closeAdd_msg:'У вас есть слова, подготовленные к добавлению. Если сейчас закрыть окно, они не будут сохранены.', btn_closeAnyway:'Закрыть без сохранения', btn_keepEditing:'Продолжить',
+    c_closeEdit:'Отменить изменения?', c_closeEdit_msg:'Если сейчас закрыть окно, изменения не сохранятся.',
+    c_closeWin:'Закрыть окно?', c_closeWin_msg:'',
+    gv_all:'Все', gv_fav:'Избранные',
+    empty_fav:'Пока нет избранных групп. Нажмите ☆ на группе, чтобы добавить её сюда.',
+    ariaFav:name=>`Добавить «${name}» в избранное`, ariaUnfav:name=>`Убрать «${name}» из избранного`,
+    btn_dispute:'⚖ Оспорить', ariaDispute:'Засчитать ответ как верный', t_disputed:'Засчитано как верно',
     btn_delete:'Удалить', h_delWord:'Удаление слова', h_delGroup:'Удаление группы',
     t_alreadyEmpty:'Уже пусто', t_cleared:'Словарь и группы очищены',
     t_noWordsGame:'Нет слов для игры', t_groupNoWords:'В группе нет слов', c_quit:'Прервать игру?',
@@ -711,7 +732,8 @@ function load(){
       id:(g.id!=null?String(g.id):uid()),
       name:(g.name==null?'Group':String(g.name)),
       wordIds:Array.from(new Set(wordIds)),
-      timer:sanTimer(g.timer)
+      timer:sanTimer(g.timer),
+      fav:!!g.fav
     });
   });
 }
@@ -1298,6 +1320,7 @@ function editWord(w){
       <button class="btn ghost" id="editCancel">${t('btn_cancel')}</button>
       <button class="btn" id="editSave">${t('btn_save')}</button>
     </div>`);
+  modalGuard={title:t('c_closeEdit'),message:t('c_closeEdit_msg'),confirmLabel:t('btn_closeAnyway'),cancelLabel:t('btn_keepEditing')};
   let audio=w.audio||'';
   document.getElementById('editEn').addEventListener('input',()=>{audio='';});
   document.getElementById('editPlay').onclick=()=>speak(document.getElementById('editEn').value.trim(),audio);
@@ -1319,7 +1342,7 @@ function editWord(w){
     w.en=en;w.ru=dedupeTranslations(document.getElementById('editRu').value);
     w.ipa=document.getElementById('editIpa').value.trim();
     w.pos=document.getElementById('editPos').value||'other';w.audio=audio;
-    save();const y=window.scrollY;renderDict();closeModal();window.scrollTo(0,y);toast(t('t_changed'));
+    save();const y=window.scrollY;renderDict();renderGroups();closeModal();window.scrollTo(0,y);toast(t('t_changed'));
   };
 }
 
@@ -1409,19 +1432,41 @@ document.getElementById('createGroup').onclick=()=>{
 document.getElementById('groupSearch').oninput=e=>{groupFilter=e.target.value;groupsPage=1;renderGroups();};
 let expandedGroups=new Set();
 let groupFilter='';
+let groupView='all';
 const GROUPS_PAGE=10;
 let groupsPage=1;
+function groupsInView(){
+  if(groupView==='fav')return state.groups.filter(g=>g.fav);
+  return state.groups;
+}
 function renderGroups(){
   const list=document.getElementById('groupsList');list.innerHTML='';
   const pagers=[document.getElementById('groupsPagerTop'),document.getElementById('groupsPager')];
   const hidePagers=()=>pagers.forEach(p=>{if(p){p.style.display='none';p.innerHTML='';}});
   const toolbar=document.getElementById('groupsToolbar');
-  if(toolbar)toolbar.style.display=state.groups.length>2?'':'none';
-  if(!state.groups.length){list.innerHTML='<div class="empty">'+esc(t('empty_groups'))+'</div>';hidePagers();return;}
+  const bar=document.getElementById('groupsView');
+  if(!state.groups.length){list.innerHTML='<div class="empty">'+esc(t('empty_groups'))+'</div>';hidePagers();if(toolbar)toolbar.style.display='none';if(bar){bar.style.display='none';bar.innerHTML='';}return;}
+  const nAll=state.groups.length;
+  const nFav=state.groups.filter(g=>g.fav).length;
+  const showBar=nFav>0;
+  if(!showBar)groupView='all';
+  if(bar){
+    if(showBar){
+      bar.style.display='';
+      const seg=(v,label,n)=>`<button type="button" class="seg${groupView===v?' active':''}" data-view="${v}">${esc(label)} <span class="seg-n">${n}</span></button>`;
+      bar.innerHTML=seg('all',t('gv_all'),nAll)+seg('fav',t('gv_fav'),nFav);
+      bar.querySelectorAll('.seg').forEach(b=>b.onclick=()=>{if(groupView!==b.dataset.view){groupView=b.dataset.view;groupsPage=1;renderGroups();}});
+    }else{bar.style.display='none';bar.innerHTML='';}
+  }
+  const base=groupsInView();
+  if(toolbar)toolbar.style.display=base.length>2?'':'none';
   const q=groupFilter.trim().toLowerCase();
-  const groupsAll=q?state.groups.filter(g=>g.name.toLowerCase().includes(q)):state.groups;
-  if(!groupsAll.length){list.innerHTML='<div class="empty">'+esc(t('empty_groupSearch'))+'</div>';hidePagers();return;}
-  const canReorder=!q&&state.groups.length>1;
+  const groupsAll=q?base.filter(g=>g.name.toLowerCase().includes(q)):base;
+  if(!groupsAll.length){
+    const msg=q?t('empty_groupSearch'):(groupView==='fav'?t('empty_fav'):t('empty_groups'));
+    list.innerHTML='<div class="empty">'+esc(msg)+'</div>';hidePagers();return;
+  }
+  const canReorder=!q&&groupView==='all'&&base.length>1;
   const total=groupsAll.length;
   const pages=Math.ceil(total/GROUPS_PAGE);
   if(groupsPage>pages)groupsPage=pages;if(groupsPage<1)groupsPage=1;
@@ -1429,7 +1474,7 @@ function renderGroups(){
   const groups=groupsAll.slice(start,end);
   groups.forEach(g=>{
     const open=expandedGroups.has(g.id);
-    const gi=state.groups.findIndex(x=>x.id===g.id);
+    const bi=base.findIndex(x=>x.id===g.id);
     const card=document.createElement('div');card.className='card'+(open?' grp-open':'');card.dataset.gid=g.id;
     const gw=g.wordIds.map(id=>state.words.find(w=>w.id===id)).filter(Boolean);
     card.innerHTML=`
@@ -1440,9 +1485,10 @@ function renderGroups(){
         </div>
         <div class="split">
           ${canReorder?`<span class="grp-move">
-            <button class="icon-btn mv" data-up ${gi<=0?'disabled':''} aria-label="${esc(t('ariaMoveGroupUp',g.name))}">▲</button>
-            <button class="icon-btn mv" data-down ${gi>=state.groups.length-1?'disabled':''} aria-label="${esc(t('ariaMoveGroupDown',g.name))}">▼</button>
+            <button class="icon-btn mv" data-up ${bi<=0?'disabled':''} aria-label="${esc(t('ariaMoveGroupUp',g.name))}">▲</button>
+            <button class="icon-btn mv" data-down ${bi>=base.length-1?'disabled':''} aria-label="${esc(t('ariaMoveGroupDown',g.name))}">▼</button>
           </span>`:''}
+          <button class="icon-btn grp-fav${g.fav?' on':''}" data-fav aria-pressed="${g.fav?'true':'false'}" aria-label="${esc(t(g.fav?'ariaUnfav':'ariaFav',g.name))}">${g.fav?'★':'☆'}</button>
           <button class="btn sm" data-play>${t('grp_learn')}</button>
           <button class="btn ghost sm" data-add>${t('grp_addWords')}</button>
           <button class="icon-btn" data-ren aria-label="${esc(t('ariaRenameGroup',g.name))}">✏️</button>
@@ -1461,6 +1507,7 @@ function renderGroups(){
         const r=document.createElement('div');r.className='word-item';r.dataset.id=w.id;
         r.innerHTML=`<button class="icon-btn play" aria-label="${esc(t('listenW',w.en))}">🔊</button>
           <div class="grow"><div><span class="en" lang="en">${esc(cap(w.en))}</span> <span class="ipa">${esc(w.ipa||'')}</span> <span class="pill" style="margin:0;font-size:11px">${esc(posLabel(w.pos))}</span></div><div class="ru">${esc(cap(w.ru||'—'))}</div></div>
+          <button class="icon-btn gedit" aria-label="${esc(t('ariaEdit',w.en))}">✏️</button>
           <button class="icon-btn rm" aria-label="${esc(t('ariaRemoveFromGroup',w.en))}">✖</button>`;
         frag.appendChild(r);
       });
@@ -1472,6 +1519,7 @@ function renderGroups(){
           const row=btn.closest('.word-item');if(!row)return;
           const w=state.words.find(x=>x.id===row.dataset.id);if(!w)return;
           if(btn.classList.contains('play'))speak(w.en,w.audio);
+          else if(btn.classList.contains('gedit'))editWord(w);
           else if(btn.classList.contains('rm')){g.wordIds=g.wordIds.filter(id=>id!==w.id);save();renderGroups();}
         });
       }
@@ -1490,6 +1538,7 @@ function renderGroups(){
     card.querySelector('[data-ren]').onclick=()=>renameGroupDialog(g);
     card.querySelector('[data-add]').onclick=()=>openGroupWordsDialog(g);
     card.querySelector('[data-play]').onclick=()=>goToCardsWithGroup(g.id);
+    card.querySelector('[data-fav]').onclick=()=>{g.fav=!g.fav;save();renderGroups();};
     if(canReorder){
       const up=card.querySelector('[data-up]'),dn=card.querySelector('[data-down]');
       if(up)up.onclick=()=>moveGroup(g.id,-1);
@@ -1503,7 +1552,7 @@ function moveGroup(id,dir){
   const i=state.groups.findIndex(g=>g.id===id);const j=i+dir;
   if(i<0||j<0||j>=state.groups.length)return;
   const [g]=state.groups.splice(i,1);state.groups.splice(j,0,g);
-  groupsPage=Math.floor(j/GROUPS_PAGE)+1; // follow the moved group if it crosses a page boundary
+  groupsPage=Math.floor(j/GROUPS_PAGE)+1;
   save();renderGroups();
   const moved=document.querySelector('#groupsList .card[data-gid="'+id+'"]');
   if(moved){const b=moved.querySelector(dir<0?'[data-up]':'[data-down]');(b&&!b.disabled?b:moved.querySelector('[data-toggle]')).focus();}
@@ -1540,6 +1589,7 @@ function addToGroupDialog(w){
       <button class="btn ghost" id="gpCancel">${t('btn_cancel')}</button>
       <button class="btn" id="gpApply">${t('btn_done')}</button>
     </div>`);
+  modalGuard={title:t('c_closeEdit'),message:t('c_closeEdit_msg'),confirmLabel:t('btn_closeAnyway'),cancelLabel:t('btn_keepEditing')};
   document.getElementById('gpCancel').onclick=closeModal;
   document.getElementById('gpApply').onclick=()=>{
     document.querySelectorAll('.gsel').forEach(cb=>{
@@ -1580,6 +1630,7 @@ function openGroupWordsDialog(g){
     </div>
     <div class="modal-scroll" id="gwList"></div>
     <div class="modal-actions"><button class="btn" id="gwDone">${t('btn_done')}</button></div>`);
+  modalGuard={title:t('c_closeWin'),message:t('c_closeWin_msg'),confirmLabel:t('btn_closeAnyway'),cancelLabel:t('btn_keepEditing')};
   const listEl=document.getElementById('gwList');
   const search=document.getElementById('gwSearch');
   const posSel=document.getElementById('gwPos');
@@ -1711,14 +1762,15 @@ function configureControls(){
   const answerRow=document.getElementById('fcAnswerRow');
   const wrong=document.getElementById('fcWrong'),right=document.getElementById('fcRight'),next=document.getElementById('fcNext');
   const play=document.getElementById('fcPlay'),check=document.getElementById('fcCheck');
-  answerRow.style.display='none';wrong.style.display='none';right.style.display='none';next.style.display='none';
+  const dispute=document.getElementById('fcDispute');
+  answerRow.style.display='none';wrong.style.display='none';right.style.display='none';next.style.display='none';dispute.style.display='none';
   wrong.disabled=false;right.disabled=false;check.disabled=false;next.disabled=false;
   play.style.display='';
   if(game.mode==='basic'){
     next.style.display='';next.textContent=t('btn_next');
   }else if(game.mode==='test'){
     if(!game.answered){answerRow.style.display='';play.style.display=(game.front==='en')?'':'none';}
-    else{next.style.display='';next.textContent=t('btn_next');}
+    else{next.style.display='';next.textContent=t('btn_next');if(game.disputable)dispute.style.display='';}
   }else if(game.mode==='random'){
     right.style.display='';wrong.style.display='';
     right.textContent=t('btn_knew');wrong.textContent=t('btn_dontknow');
@@ -1740,7 +1792,7 @@ function fitCards(){fitCardText(document.querySelector('#flashcard .fc-front'));
 function showCard(){
   const c=document.getElementById('flashcard');const inner=c.querySelector('.fc-inner');
   inner.style.transition='none';c.classList.remove('flipped');void inner.offsetWidth;requestAnimationFrame(()=>{inner.style.transition='';});
-  game.answered=false;
+  game.answered=false;game.disputable=false;
   const w=game.words[game.i];const total=game.words.length;
   document.getElementById('fcBar').style.width=((game.i)/total*100)+'%';
   document.getElementById('fcProgress').setAttribute('aria-valuenow',String(Math.round(game.i/total*100)));
@@ -1779,7 +1831,6 @@ function answerMatches(typed,correct,lang){
   const cand=new Set();
   const add=v=>{if(v){cand.add(v);const st=stripLead(v,lang);if(st)cand.add(st);}};
   String(correct==null?'':correct).split(/[,;\/]|\s[—–-]\s/).forEach(raw=>{
-    // Accept the answer with or without any "(…)" clarification.
     add(normAns(raw));
     add(normAns(raw.replace(/\([^)]*\)/g,' ')));
   });
@@ -1801,6 +1852,7 @@ function revealTest(ok,typed){
   const w=game.words[game.i];
   if(!w.stats)w.stats={seen:0,right:0,wrong:0};
   w.stats.seen++;if(ok)w.stats.right++;else{w.stats.wrong++;game.wrong.push(w);}
+  game.disputable=!ok;
   save();
   const badge=document.getElementById('fcBadge');badge.style.display='';
   if(ok){badge.className='fc-badge ok';badge.textContent=t('badge_ok');}
@@ -1811,6 +1863,20 @@ function revealTest(ok,typed){
   cancelCardAudio();
   if(game.autoplay)cardAutoplay(w);
   document.getElementById('fcNext').focus();
+}
+function disputeAnswer(){
+  if(!game||game.mode!=='test'||!game.answered||!game.disputable)return;
+  const w=game.words[game.i];
+  if(!w.stats)w.stats={seen:0,right:0,wrong:0};
+  if(w.stats.wrong>0)w.stats.wrong--;
+  w.stats.right++;
+  const idx=game.wrong.lastIndexOf(w);if(idx>=0)game.wrong.splice(idx,1);
+  game.disputable=false;
+  save();
+  const badge=document.getElementById('fcBadge');badge.className='fc-badge ok';badge.textContent=t('badge_ok');
+  configureControls();
+  document.getElementById('fcNext').focus();
+  toast(t('t_disputed'));
 }
 function advance(){
   if(!game)return;
@@ -2096,6 +2162,7 @@ document.getElementById('fcPlay').onclick=(e)=>{e.stopPropagation();if(!game)ret
 document.getElementById('fcCheck').onclick=()=>evalTest();
 document.getElementById('fcAnswer').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();evalTest();}});
 document.getElementById('fcNext').onclick=()=>{if(game&&game.mode==='random'){nextRandom();return;}advance();};
+document.getElementById('fcDispute').onclick=()=>disputeAnswer();
 document.getElementById('fcRight').onclick=()=>{if(game&&game.mode==='random')randomAnswer(true);};
 document.getElementById('fcWrong').onclick=()=>{if(game&&game.mode==='random')randomAnswer(false);};
 document.getElementById('fcQuit').onclick=()=>{
