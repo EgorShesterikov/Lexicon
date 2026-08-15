@@ -1,5 +1,9 @@
 # Lexicon
 
+## 1.0.13 - 15.08.2026
+
+Backup now keeps everything. Export saves a full backup file (.json) with your words, per-word statistics, groups, favorites and best times; importing that file restores all of it, after asking whether to replace the current data. Older .csv exports still import as words only, so nothing you saved before is lost.
+
 ## 1.0.12 - 15.08.2026
 
 Fixed the timer on a timed group test when you retry your mistakes: the clock no longer resets to zero for the retry. Instead it carries on from the first run, so the best time saved is the total of the whole attempt (first pass plus the mistakes retry) rather than just the short retry.

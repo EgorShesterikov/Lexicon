@@ -248,7 +248,7 @@
     <button type="button" data-setlang="ru">RU</button>
   </div>
   <button class="icon-btn" id="settingsBtn" data-i18n-title="settings" data-i18n-aria="settings" aria-haspopup="dialog">⚙️</button>
-  <input type="file" id="importFile" accept=".csv,.txt" data-i18n-aria="importFileAria" style="display:none">
+  <input type="file" id="importFile" accept=".json,.csv,.txt" data-i18n-aria="importFileAria" style="display:none">
 </header>
 <div class="wrap">
   <nav role="tablist" data-i18n-aria="navAria">
@@ -461,7 +461,7 @@ function posLabel(p){const m=POS_NAMES[lang];return m[p]||m.other;}
 const STR={
   en:{
     title:'Lexicon — English vocabulary',
-    settings:'Settings', importFileAria:'CSV file to import', navAria:'App sections',
+    settings:'Settings', importFileAria:'Backup file to import', navAria:'App sections',
     tab_add:'Add', tab_dict:'Dictionary', tab_groups:'Groups', tab_cards:'Cards',
     h_addOne:'Add a word', lbl_en:'English word', ph_en:'e.g. delighted',
     btn_fetch:'🔎 Fetch data', lbl_ru:'Translation (RU)', ph_ru:'e.g. восхищённый',
@@ -492,8 +492,10 @@ const STR={
     btn_wrong:'✗ Missed', btn_right:'✓ Got it', btn_quit:'Quit',
     result_done:'Done! 🎉', result_right:'correct', result_wrong:'mistakes', result_accuracy:'Accuracy:',
     result_mistakes:'❌ Words with mistakes — review them', btn_againAll:'Play again', btn_againWrong:'Study mistakes only', btn_backSetup:'Back to setup',
-    h_settings:'⚙️ Settings', h_backup:'Backup', btn_export:'⬇ Export to CSV', btn_import:'⬆ Import from CSV',
-    backup_note:'Export saves the whole dictionary to a file. Import adds words from a CSV, skipping duplicates.',
+    h_settings:'⚙️ Settings', h_backup:'Backup', btn_export:'⬇ Export backup', btn_import:'⬆ Import backup',
+    backup_note:'Export saves a full backup — words, statistics, groups, favorites and best times — to a file. Import from that file restores everything, replacing the current data.',
+    importRestored:(w,g)=>`Restored: ${nWords(w)} · ${nGroups(g)}`,
+    h_importReplace:'Replace current data?', c_importReplace:'This backup will replace everything currently in the app — words, statistics, groups and best times.', btn_importReplace:'Replace',
     h_danger:'Danger zone', btn_reset:'🗑 Reset everything',
     reset_note:'Completely deletes all words and groups with no way to recover. Export first.', btn_close:'Close',
     h_editWord:'Edit word', btn_fetchVariants:'🔎 Fetch variants', btn_cancel:'Cancel', btn_save:'Save',
@@ -573,7 +575,7 @@ const STR={
   },
   ru:{
     title:'Лексикон — словарь английских слов',
-    settings:'Настройки', importFileAria:'Файл CSV для импорта', navAria:'Разделы приложения',
+    settings:'Настройки', importFileAria:'Файл резервной копии для импорта', navAria:'Разделы приложения',
     tab_add:'Добавить', tab_dict:'Словарь', tab_groups:'Группы', tab_cards:'Карточки',
     h_addOne:'Добавить одно слово', lbl_en:'Английское слово', ph_en:'например, delighted',
     btn_fetch:'🔎 Подтянуть данные', lbl_ru:'Перевод (рус)', ph_ru:'например, восхищённый',
@@ -604,8 +606,10 @@ const STR={
     btn_wrong:'✗ Ошибся', btn_right:'✓ Вспомнил', btn_quit:'Прервать',
     result_done:'Готово! 🎉', result_right:'верно', result_wrong:'ошибок', result_accuracy:'Точность:',
     result_mistakes:'❌ Слова с ошибками — повторите', btn_againAll:'Пройти заново', btn_againWrong:'Учить только ошибки', btn_backSetup:'К настройкам',
-    h_settings:'⚙️ Настройки', h_backup:'Резервная копия', btn_export:'⬇ Экспорт в CSV', btn_import:'⬆ Импорт из CSV',
-    backup_note:'Экспорт сохранит весь словарь в файл. Импорт добавит слова из CSV, пропуская дубли.',
+    h_settings:'⚙️ Настройки', h_backup:'Резервная копия', btn_export:'⬇ Экспорт копии', btn_import:'⬆ Импорт копии',
+    backup_note:'Экспорт сохраняет полную резервную копию — слова, статистику, группы, избранное и лучшие времена — в файл. Импорт из этого файла восстановит всё, заменив текущие данные.',
+    importRestored:(w,g)=>`Восстановлено: ${nWords(w)} · ${nGroups(g)}`,
+    h_importReplace:'Заменить текущие данные?', c_importReplace:'Эта резервная копия заменит всё, что сейчас в приложении — слова, статистику, группы и лучшие времена.', btn_importReplace:'Заменить',
     h_danger:'Опасная зона', btn_reset:'🗑 Сбросить всё',
     reset_note:'Полностью удалит все слова и группы без возможности восстановления. Сделайте экспорт заранее.', btn_close:'Закрыть',
     h_editWord:'Редактировать слово', btn_fetchVariants:'🔎 Подтянуть варианты', btn_cancel:'Отмена', btn_save:'Сохранить',
@@ -704,6 +708,9 @@ function sanTimer(tm){
 function load(){
   let parsed=null;
   try{const raw=localStorage.getItem(KEY);if(raw)parsed=JSON.parse(raw);}catch(e){parsed=null;}
+  hydrate(parsed);
+}
+function hydrate(parsed){
   if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))parsed={};
   state={words:[],groups:[]};
   const words=Array.isArray(parsed.words)?parsed.words:[];
@@ -1350,12 +1357,13 @@ function editWord(w){
 }
 
 function doExport(){
-  if(!state.words.length){toast(t('t_exportEmpty'),true);return;}
-  const rows=[['english','russian','ipa','pos']].concat(state.words.map(w=>[w.en,w.ru,w.ipa,posLabel(w.pos)]));
-  const csv=rows.map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
-  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  if(!state.words.length&&!state.groups.length){toast(t('t_exportEmpty'),true);return;}
+  const backup={format:'lexicon-backup',version:1,exported:new Date().toISOString(),data:{words:state.words,groups:state.groups}};
+  const json=JSON.stringify(backup);
+  const blob=new Blob([json],{type:'application/json;charset=utf-8'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='my_vocabulary.csv';document.body.appendChild(a);a.click();a.remove();
+  const stamp=new Date().toISOString().slice(0,10);
+  const a=document.createElement('a');a.href=url;a.download='lexicon-backup-'+stamp+'.json';document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1500);
   toast(t('exportedN',state.words.length));
 }
@@ -1405,10 +1413,33 @@ function parseCSV(text){
 document.getElementById('importFile').onchange=e=>{
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=()=>{try{doImport(r.result);}catch(err){toast(t('t_parseFail'),true);}e.target.value='';};
+  r.onload=()=>{try{importData(r.result);}catch(err){toast(t('t_parseFail'),true);}e.target.value='';};
   r.onerror=()=>{toast(t('t_readFail'),true);e.target.value='';};
   r.readAsText(f);
 };
+function importData(text){
+  const trimmed=String(text||'').replace(/^﻿/,'').trim();
+  if(trimmed.charAt(0)==='{'){
+    let obj=null;try{obj=JSON.parse(trimmed);}catch(e){obj=null;}
+    if(obj&&typeof obj==='object'){
+      const data=(obj.data&&typeof obj.data==='object')?obj.data:obj;
+      if(Array.isArray(data.words)||Array.isArray(data.groups)){importBackup(data);return;}
+    }
+    toast(t('t_parseFail'),true);return;
+  }
+  doImport(text);
+}
+function importBackup(data){
+  const apply=()=>{
+    hydrate({words:data.words||[],groups:data.groups||[]});
+    expandedGroups=new Set();groupView='all';groupFilter='';groupsPage=1;dictPage=1;
+    save();renderDict();renderGroups();renderCardSetup();
+    toast(t('importRestored',state.words.length,state.groups.length));
+  };
+  if(state.words.length||state.groups.length){
+    openConfirm({title:t('h_importReplace'),message:t('c_importReplace'),confirmLabel:t('btn_importReplace'),cancelLabel:t('btn_cancel'),danger:true,onConfirm:apply});
+  }else apply();
+}
 function doImport(text){
   const rows=parseCSV(text).filter(r=>r.some(c=>(c||'').trim()!==''));
   if(!rows.length){toast(t('t_fileEmpty'),true);return;}
