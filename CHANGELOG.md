@@ -1,5 +1,9 @@
 # Lexicon
 
+## 1.0.10 - 12.08.2026
+
+Long group names now wrap onto a second line and the card grows taller to fit, instead of being cut off with an ellipsis. The action buttons stay together in one row, and short names still sit on a single line.
+
 ## 1.0.9 - 12.08.2026
 
 Group cards keep a consistent layout: the header now stays on a single row in every view, with the name shortened by an ellipsis when needed instead of the buttons dropping to a second line. The "All" view (with its reorder arrows) now looks the same as "Favorites". On narrow phone screens the buttons still wrap so nothing runs off the edge.

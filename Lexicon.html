@@ -135,10 +135,10 @@
   .fc-timer{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent2);font-style:normal}
   .timer-stat{font-size:12.5px;color:var(--accent2);font-style:normal;margin-top:4px}
   .fc-pos{font-size:11.5px;color:var(--muted);font-style:normal;text-transform:uppercase;letter-spacing:1.2px}
-  .grp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap}
-  .grp-head>.split{flex:0 0 auto;flex-wrap:nowrap}
-  .grp-title{display:flex;align-items:center;gap:8px;cursor:pointer;min-width:0;flex:1 1 auto}
-  .grp-title h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .grp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:nowrap}
+  .grp-head>.split{flex:0 0 auto;flex-wrap:nowrap;gap:6px}
+  .grp-title{display:flex;align-items:flex-start;gap:6px;cursor:pointer;min-width:0;flex:1 1 auto;padding-top:3px}
+  .grp-title h2{overflow-wrap:anywhere;word-break:break-word;line-height:1.3}
   .grp-move{display:inline-flex;gap:4px}
   .icon-btn.mv{width:32px;height:32px;font-size:12px}
   .icon-btn:disabled{opacity:.35;cursor:not-allowed}
@@ -1484,7 +1484,7 @@ function renderGroups(){
       <div class="grp-head">
         <div class="grp-title" data-toggle role="button" tabindex="0" aria-expanded="${open?'true':'false'}" aria-label="${esc(t('ariaToggleGroup',g.name))}">
           <span class="grp-chevron" aria-hidden="true">▸</span>
-          <h2 style="margin:0">📁 ${esc(g.name)} <span class="muted" style="font-weight:400">· ${nWords(g.wordIds.length)}</span></h2>
+          <h2 style="margin:0">📁 ${esc(g.name)} <span class="muted" style="font-weight:400;white-space:nowrap">· ${nWords(g.wordIds.length)}</span></h2>
         </div>
         <div class="split">
           ${canReorder?`<span class="grp-move">
