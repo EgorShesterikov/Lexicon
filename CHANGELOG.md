@@ -1,5 +1,9 @@
 # Lexicon
 
+## 1.0.9 - 12.08.2026
+
+Group cards keep a consistent layout: the header now stays on a single row in every view, with the name shortened by an ellipsis when needed instead of the buttons dropping to a second line. The "All" view (with its reorder arrows) now looks the same as "Favorites". On narrow phone screens the buttons still wrap so nothing runs off the edge.
+
 ## 1.0.8 - 12.08.2026
 
 Misclicks can no longer wipe out your work: the edit-word window and the add-words-to-group window now ask before closing if you click outside them or press Escape, the same way the bulk-add review already did.

@@ -135,7 +135,8 @@
   .fc-timer{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent2);font-style:normal}
   .timer-stat{font-size:12.5px;color:var(--accent2);font-style:normal;margin-top:4px}
   .fc-pos{font-size:11.5px;color:var(--muted);font-style:normal;text-transform:uppercase;letter-spacing:1.2px}
-  .grp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .grp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap}
+  .grp-head>.split{flex:0 0 auto;flex-wrap:nowrap}
   .grp-title{display:flex;align-items:center;gap:8px;cursor:pointer;min-width:0;flex:1 1 auto}
   .grp-title h2{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .grp-move{display:inline-flex;gap:4px}
@@ -215,6 +216,8 @@
     .stat-big{font-size:36px}
     .icon-btn{width:42px;height:42px}
     .review-row .rv-ru,.review-row .rv-pos{flex:1 1 100%;max-width:none}
+    .grp-head{flex-wrap:wrap}
+    .grp-head>.split{flex-wrap:wrap}
   }
   @media (max-width:560px){
     #countBadge{display:none}
