@@ -1744,7 +1744,7 @@ function startGameWith(words,opts){
   if(order==='shuffle')shuffle(words);
   const groupId=opts.groupId||null;
   const useTimer=(mode==='test')&&!!groupId&&document.getElementById('cardTimer').checked;
-  game={mode,words,front,autoplay,i:0,wrong:[],answered:false,groupId,timer:useTimer,startTime:0,timerInt:null,_lastTimer:null};
+  game={mode,words,front,autoplay,i:0,wrong:[],answered:false,groupId,timer:useTimer,startTime:0,timerInt:null,_lastTimer:null,carryMs:opts.carryMs||0};
   showGameScreen();
   showCard();
   if(game.timer)startTimer();
@@ -1897,7 +1897,7 @@ function startTimer(){
 }
 function updateTimerText(){
   if(!game||!game.timer)return;
-  document.getElementById('fcTimer').innerHTML='⏱ <span class="fc-timer">'+fmtTime(Date.now()-game.startTime)+'</span>';
+  document.getElementById('fcTimer').innerHTML='⏱ <span class="fc-timer">'+fmtTime((Date.now()-game.startTime)+(game.carryMs||0))+'</span>';
 }
 function stopTimer(){
   if(game&&game.timerInt){clearInterval(game.timerInt);game.timerInt=null;}
@@ -1905,7 +1905,7 @@ function stopTimer(){
 }
 function recordTimer(){
   if(!game||!game.timer||!game.groupId)return null;
-  const elapsed=Date.now()-game.startTime;
+  const elapsed=(Date.now()-game.startTime)+(game.carryMs||0);
   if(game.wrong.length>0)return {elapsed,saved:false,hadMistakes:true};
   const g=state.groups.find(x=>x.id===game.groupId);if(!g)return {elapsed,saved:false};
   if(!g.timer||typeof g.timer!=='object')g.timer={};
@@ -2085,7 +2085,7 @@ function renderResult(timerRes){
       r.querySelector('.play').onclick=()=>speak(w.en,w.audio);
       wl.appendChild(r);
     });
-    const aw=res.querySelector('#againWrong');if(aw)aw.onclick=()=>startGameWith(game.wrong.slice(),{groupId:game.groupId,mode:'test'});
+    const aw=res.querySelector('#againWrong');if(aw)aw.onclick=()=>startGameWith(game.wrong.slice(),{groupId:game.groupId,mode:'test',carryMs:timerRes?timerRes.elapsed:0});
   }
 }
 function renderRandomResult(){

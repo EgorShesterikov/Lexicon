@@ -1,5 +1,9 @@
 # Lexicon
 
+## 1.0.12 - 15.08.2026
+
+Fixed the timer on a timed group test when you retry your mistakes: the clock no longer resets to zero for the retry. Instead it carries on from the first run, so the best time saved is the total of the whole attempt (first pass plus the mistakes retry) rather than just the short retry.
+
 ## 1.0.11 - 15.08.2026
 
 In the Cards test you can now type several answers separated by commas. The answer counts as correct only when every entry you typed matches a correct translation — if any one of them is wrong, the answer is marked wrong. Single answers and multi-word phrases work exactly as before.
