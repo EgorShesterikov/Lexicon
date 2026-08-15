@@ -1,14 +1,18 @@
 # Lexicon
 
-## 1.0.10 - 12.08.2026
+## 1.0.11 - 15.08.2026
+
+In the Cards test you can now type several answers separated by commas. The answer counts as correct only when every entry you typed matches a correct translation — if any one of them is wrong, the answer is marked wrong. Single answers and multi-word phrases work exactly as before.
+
+## 1.0.10 - 15.08.2026
 
 Long group names now wrap onto a second line and the card grows taller to fit, instead of being cut off with an ellipsis. The action buttons stay together in one row, and short names still sit on a single line.
 
-## 1.0.9 - 12.08.2026
+## 1.0.9 - 15.08.2026
 
 Group cards keep a consistent layout: the header now stays on a single row in every view, with the name shortened by an ellipsis when needed instead of the buttons dropping to a second line. The "All" view (with its reorder arrows) now looks the same as "Favorites". On narrow phone screens the buttons still wrap so nothing runs off the edge.
 
-## 1.0.8 - 12.08.2026
+## 1.0.8 - 15.08.2026
 
 Misclicks can no longer wipe out your work: the edit-word window and the add-words-to-group window now ask before closing if you click outside them or press Escape, the same way the bulk-add review already did.
 
@@ -18,7 +22,7 @@ Words can be edited straight from inside a group — each word in an opened grou
 
 The Cards test gets a "Dispute" button. If an answer was marked wrong but was actually right — a typo, or you didn't finish typing — one tap counts it as correct and updates the score.
 
-## 1.0.7 - 12.08.2026
+## 1.0.7 - 13.08.2026
 
 Translation variants are kept unique regardless of case: "Кот" and "кот" are no longer stored as two separate meanings, only one is kept.
 

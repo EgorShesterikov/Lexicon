@@ -1830,7 +1830,6 @@ function normAns(s){
 }
 function stripLead(s,lang){return (lang==='en')?s.replace(/^(to|a|an|the)\s+/,'').trim():s;}
 function answerMatches(typed,correct,lang){
-  const ans=normAns(typed);if(!ans)return false;
   const cand=new Set();
   const add=v=>{if(v){cand.add(v);const st=stripLead(v,lang);if(st)cand.add(st);}};
   String(correct==null?'':correct).split(/[,;\/]|\s[—–-]\s/).forEach(raw=>{
@@ -1838,8 +1837,9 @@ function answerMatches(typed,correct,lang){
     add(normAns(raw.replace(/\([^)]*\)/g,' ')));
   });
   if(!cand.size)return false;
-  const ansStr=stripLead(ans,lang);
-  return cand.has(ans)||cand.has(ansStr);
+  const typedParts=String(typed==null?'':typed).split(/[,;\/]|\s[—–-]\s/).map(p=>normAns(p)).filter(Boolean);
+  if(!typedParts.length)return false;
+  return typedParts.every(ans=>cand.has(ans)||cand.has(stripLead(ans,lang)));
 }
 function evalTest(){
   if(!game||game.mode!=='test'||game.answered)return;
