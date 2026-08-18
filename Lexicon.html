@@ -1775,7 +1775,7 @@ function startGameWith(words,opts){
   if(order==='shuffle')shuffle(words);
   const groupId=opts.groupId||null;
   const useTimer=(mode==='test')&&!!groupId&&document.getElementById('cardTimer').checked;
-  game={mode,words,front,autoplay,i:0,wrong:[],answered:false,groupId,timer:useTimer,startTime:0,timerInt:null,_lastTimer:null,carryMs:opts.carryMs||0};
+  game={mode,words,front,autoplay,i:0,wrong:[],answered:false,groupId,timer:useTimer,startTime:0,timerInt:null,_lastTimer:null,carryMs:opts.carryMs||0,source:(opts.source&&opts.source.length)?opts.source.slice():words.slice()};
   showGameScreen();
   showCard();
   if(game.timer)startTimer();
@@ -2105,7 +2105,7 @@ function renderResult(timerRes){
   }
   res.innerHTML=html;
   if(game.mode==='random'){wireRandomResult(res);return;}
-  const againAll=res.querySelector('#againAll');if(againAll)againAll.onclick=()=>startGameWith(game.words.slice(),{groupId:game.groupId,mode:game.mode});
+  const againAll=res.querySelector('#againAll');if(againAll)againAll.onclick=()=>startGameWith((game.source||game.words).slice(),{groupId:game.groupId,mode:game.mode});
   const backSetup=res.querySelector('#backSetup');if(backSetup)backSetup.onclick=renderCardSetup;
   if(game.mode==='test'&&game.wrong.length){
     const wl=res.querySelector('#wrongList');
@@ -2116,7 +2116,7 @@ function renderResult(timerRes){
       r.querySelector('.play').onclick=()=>speak(w.en,w.audio);
       wl.appendChild(r);
     });
-    const aw=res.querySelector('#againWrong');if(aw)aw.onclick=()=>startGameWith(game.wrong.slice(),{groupId:game.groupId,mode:'test',carryMs:timerRes?timerRes.elapsed:0});
+    const aw=res.querySelector('#againWrong');if(aw)aw.onclick=()=>startGameWith(game.wrong.slice(),{groupId:game.groupId,mode:'test',carryMs:timerRes?timerRes.elapsed:0,source:game.source});
   }
 }
 function renderRandomResult(){
