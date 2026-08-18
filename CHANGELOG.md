@@ -1,5 +1,9 @@
 # Lexicon
 
+## 1.0.14 - 15.08.2026
+
+Fixed "Play again" after studying your mistakes: it now restarts the whole test from the beginning instead of replaying only the few cards you got wrong. "Study mistakes only" still runs just the mistakes.
+
 ## 1.0.13 - 15.08.2026
 
 Backup now keeps everything. Export saves a full backup file (.json) with your words, per-word statistics, groups, favorites and best times; importing that file restores all of it, after asking whether to replace the current data. Older .csv exports still import as words only, so nothing you saved before is lost.
