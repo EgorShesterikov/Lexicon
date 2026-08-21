@@ -211,13 +211,15 @@
     .flashcard{height:220px;max-width:100%}
     .fc-word{font-size:26px}
     .fc-controls{max-width:100%}
-    .modal-overlay{padding:8px}
-    .modal-box{padding:16px;max-height:94vh}
+    .modal-overlay{padding:8px;align-items:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+    .modal-box{padding:16px;max-height:none;margin:auto}
+    .modal-scroll{max-height:none;overflow:visible;padding-right:0}
     .stat-big{font-size:36px}
     .icon-btn{width:42px;height:42px}
     .review-row .rv-ru,.review-row .rv-pos{flex:1 1 100%;max-width:none}
-    .grp-head{flex-wrap:wrap}
-    .grp-head>.split{flex-wrap:wrap}
+    .grp-head{flex-direction:column;align-items:stretch;gap:10px}
+    .grp-title{padding-top:0}
+    .grp-head>.split{flex-wrap:wrap;width:100%;justify-content:flex-start}
   }
   @media (max-width:560px){
     #countBadge{display:none}
@@ -1644,10 +1646,19 @@ function goToCardsWithGroup(groupId){
     const srch=document.getElementById('cardGroupSearch');if(srch)srch.value='';
     fillGroupSelect();
     const gsel=document.getElementById('cardGroup');if(gsel)gsel.value=groupId;
+  }
+  selectMode('basic');
+  const g=state.groups.find(x=>x.id===groupId);
+  const words=(g?g.wordIds:[]).map(id=>state.words.find(w=>w.id===id)).filter(Boolean);
+  if(!words.length){
     updateSetupVisibility();
+    try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}
+    toast(t('t_noWordsGame'),true);
+    const start=document.getElementById('startCards');if(start)start.focus();
+    return;
   }
   try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}
-  const start=document.getElementById('startCards');if(start)start.focus();
+  startGameWith(words,{groupId,mode:'basic'});
 }
 function openGroupWordsDialog(g){
   if(!state.words.length){toast(t('t_noWordsForGroup'),true);return;}
