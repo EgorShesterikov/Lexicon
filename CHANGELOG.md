@@ -1,5 +1,11 @@
 # Lexicon
 
+## 1.0.15 - 21.08.2026
+
+Better on the phone. Group cards no longer spill their action buttons off the edge of the screen — on a narrow display the group name now sits on its own row with the buttons (learn, add words, rename, delete and the reorder arrows) wrapping neatly beneath it, so nothing runs past the card or forces the page to scroll sideways. Pop-up windows scroll properly too: the whole dialog now scrolls as one on a phone, so long lists and the buttons at the bottom (like "Done") are always reachable instead of being cut off below the fold.
+
+The "Learn" button on a group now drops you straight into flipping cards. Instead of opening the setup screen with the group pre-selected, it starts Repetition mode right away for that group, so one tap takes you from the group to reviewing its words.
+
 ## 1.0.14 - 15.08.2026
 
 Fixed "Play again" after studying your mistakes: it now restarts the whole test from the beginning instead of replaying only the few cards you got wrong. "Study mistakes only" still runs just the mistakes.
