@@ -1640,6 +1640,7 @@ function addToGroupDialog(w){
 
 function goToCardsWithGroup(groupId){
   activateTab('cards');
+  selectMode('basic');
   const sel=document.getElementById('cardScope');
   if(sel&&Array.from(sel.options).some(o=>o.value==='groups')){
     sel.value='groups';
@@ -1647,18 +1648,9 @@ function goToCardsWithGroup(groupId){
     fillGroupSelect();
     const gsel=document.getElementById('cardGroup');if(gsel)gsel.value=groupId;
   }
-  selectMode('basic');
-  const g=state.groups.find(x=>x.id===groupId);
-  const words=(g?g.wordIds:[]).map(id=>state.words.find(w=>w.id===id)).filter(Boolean);
-  if(!words.length){
-    updateSetupVisibility();
-    try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}
-    toast(t('t_noWordsGame'),true);
-    const start=document.getElementById('startCards');if(start)start.focus();
-    return;
-  }
+  updateSetupVisibility();
   try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}
-  startGameWith(words,{groupId,mode:'basic'});
+  const start=document.getElementById('startCards');if(start)start.focus();
 }
 function openGroupWordsDialog(g){
   if(!state.words.length){toast(t('t_noWordsForGroup'),true);return;}

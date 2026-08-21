@@ -4,7 +4,7 @@
 
 Better on the phone. Group cards no longer spill their action buttons off the edge of the screen — on a narrow display the group name now sits on its own row with the buttons (learn, add words, rename, delete and the reorder arrows) wrapping neatly beneath it, so nothing runs past the card or forces the page to scroll sideways. Pop-up windows scroll properly too: the whole dialog now scrolls as one on a phone, so long lists and the buttons at the bottom (like "Done") are always reachable instead of being cut off below the fold.
 
-The "Learn" button on a group now drops you straight into flipping cards. Instead of opening the setup screen with the group pre-selected, it starts Repetition mode right away for that group, so one tap takes you from the group to reviewing its words.
+The "Learn" button on a group now opens the Cards tab with Repetition mode already selected (and the group pre-filled), so you land on the setup ready to review rather than having to switch the mode yourself.
 
 ## 1.0.14 - 15.08.2026
 
